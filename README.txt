@@ -20,7 +20,7 @@ The initial call to ``from_uri`` will create the database.  Subsequent
 calls for the same URI will return the created database.
 
 See repoze.zodbconn.resolvers/* for URI syntax resolvers.  Currently
-only a ZEO is implemented.
+only a ZEO resolver is implemented.
 
 Middleware Usage
 ----------------
