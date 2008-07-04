@@ -59,9 +59,9 @@ class TestZEOURIResolver(unittest.TestCase):
     def test_prepare_tcp(self):
         resolver = self._makeOne()
         k, args, kw = resolver.prepare('zeo://localhost:8080?debug=true')
-        self.assertEqual(args, (('localhost', '8080'),))
+        self.assertEqual(args, (('localhost', 8080),))
         self.assertEqual(kw, {'debug':1})
-        self.assertEqual(k, ((('localhost', '8080'),), (('debug', 1),)))
+        self.assertEqual(k, ((('localhost', 8080),), (('debug', 1),)))
 
     def test_prepare_unix(self):
         resolver = self._makeOne()

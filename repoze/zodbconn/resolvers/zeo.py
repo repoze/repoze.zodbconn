@@ -50,9 +50,10 @@ class ZEOURIResolver:
             # TCP URL
             if ':' in netloc:
                 host, port = netloc.split(':')
+                port = int(port)
             else:
                 host = netloc
-                port = '9991'
+                port = 9991
             args = ((host, port),)
         else:
             # Unix domain socket URL
@@ -74,5 +75,3 @@ class ZEOURIResolver:
 
 resolve_zeo_uri = ZEOURIResolver()
 
-from repoze.zodbconn.utils import register_uri_resolver
-register_uri_resolver('zeo', resolve_zeo_uri)

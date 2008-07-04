@@ -14,3 +14,6 @@ def dbfactory_from_uri(uri):
     if resolver is None:
         raise ValueError('Unresolveable URI %s' % uri)
     return resolver(uri)
+
+from repoze.zodbconn.resolvers.zeo import resolve_zeo_uri
+register_uri_resolver('zeo', resolve_zeo_uri)

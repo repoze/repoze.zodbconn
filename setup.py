@@ -1,6 +1,6 @@
 ##############################################################################
 #
-# Copyright (c) 2007 Agendaless Consulting and Contributors.
+# Copyright (c) 2008 Agendaless Consulting and Contributors.
 # All Rights Reserved.
 #
 # This software is subject to the provisions of the BSD-like license at
@@ -23,25 +23,25 @@ from setuptools import setup, find_packages
 
 here = os.path.abspath(os.path.dirname(__file__))
 README = open(os.path.join(here, 'README.txt')).read()
+CHANGES = open(os.path.join(here, 'CHANGES.txt')).read()
 
 setup(name='repoze.zodbconn',
       version=__version__,
       description=('Middleware which makes ZODB connections available to'
                    'downstream applications'),
-      long_description=README,
+      long_description=README + '\n\n' + CHANGES,
       classifiers=[
-        "Development Status :: 1 - Planning",
+        "Development Status :: 3 - Alpha",
         "Intended Audience :: Developers",
         "Programming Language :: Python",
         "Topic :: Internet :: WWW/HTTP",
         "Topic :: Internet :: WWW/HTTP :: Dynamic Content",
         "Topic :: Internet :: WWW/HTTP :: WSGI",
-        "Topic :: Internet :: WWW/HTTP :: WSGI :: Application",
+        "Topic :: Internet :: WWW/HTTP :: WSGI :: Middleware",
         ],
-      keywords='web application server wsgi zope',
+      keywords='wsgi middleware zope zodb',
       author="Agendaless Consulting",
       author_email="repoze-dev@lists.repoze.org",
-      dependency_links=['http://dist.repoze.org'],
       url="http://www.repoze.org",
       license="BSD-derived (http://www.repoze.org/LICENSE.txt)",
       packages=find_packages(),
@@ -52,14 +52,6 @@ setup(name='repoze.zodbconn',
       install_requires=['ZODB3'],
       test_suite="repoze.zodbconn.tests",
       entry_points = """\
-        #[console_scripts]
-        #addzope2user = repoze.atemplate.scripts.adduser:main
-
-        #[repoze.project]
-        #initialize = repoze.atemplate.instance:mkinstance
-
-        #[paste.filter_app_factory]
-        #middleware = repoze.atemplate:constructor
       """
       )
 
