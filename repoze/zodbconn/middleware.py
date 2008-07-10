@@ -28,17 +28,19 @@ def make_middleware(app, global_conf, **kw):
     from repoze.zodbconn.manager import databases
     return ZODBConnectionMiddleware(app, databases, **kw)
 
-_ENV_PREFIX = 'repoze.zodbconn.'
+_ENV_KEY = 'repoze.zodbconn.connections'
 
 def add_conn(environ, name, conn):
-    environ[_ENV_PREFIX + name] = conn
+    conn_d = environ.setdefault(_ENV_KEY, {})
+    conn_d[name] = conn
     
 def get_conn(environ, name):
-    return environ.get(_ENV_PREFIX + name)
+    return environ.get(_ENV_KEY, {}).get(name)
 
 def del_conn(environ, name):
+    conn_d = environ.get(_ENV_KEY, {})
     try:
-        del environ[_ENV_PREFIX + name]
+        del conn_d[name]
     except KeyError:
         pass
 

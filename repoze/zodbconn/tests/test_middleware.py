@@ -36,9 +36,10 @@ class TestMiddleware(unittest.TestCase):
         conns = app.conns
         for conn in conns:
             self.assertEqual(conn.closed, True)
-        from repoze.zodbconn.middleware import _ENV_PREFIX
-        self.failIf(environ.has_key(_ENV_PREFIX + 'name1'))
-        self.failIf(environ.has_key(_ENV_PREFIX + 'name2'))
+        from repoze.zodbconn.middleware import _ENV_KEY
+        conn_d = environ.get(_ENV_KEY, {})
+        self.failIf(conn_d.has_key('name1'))
+        self.failIf(conn_d.has_key('name2'))
 
     def test_call_exc(self):
         app = DummyApp(result=['foo'], exception=ValueError)
@@ -52,9 +53,10 @@ class TestMiddleware(unittest.TestCase):
         conns = app.conns
         for conn in conns:
             self.assertEqual(conn.closed, True)
-        from repoze.zodbconn.middleware import _ENV_PREFIX
-        self.failIf(environ.has_key(_ENV_PREFIX + 'name1'))
-        self.failIf(environ.has_key(_ENV_PREFIX + 'name2'))
+        from repoze.zodbconn.middleware import _ENV_KEY
+        conn_d = environ.get(_ENV_KEY, {})
+        self.failIf(conn_d.has_key('name1'))
+        self.failIf(conn_d.has_key('name2'))
 
 class DummyApp:
     def __init__(self, exception=None, result=()):
@@ -63,10 +65,8 @@ class DummyApp:
         self.conns = []
 
     def __call__(self, environ, start_response):
-        from repoze.zodbconn.middleware import _ENV_PREFIX
-        for name in environ.keys():
-            if name.startswith(_ENV_PREFIX):
-                self.conns.append(environ[name])
+        from repoze.zodbconn.middleware import _ENV_KEY
+        self.conns = environ.get(_ENV_KEY, {}).values()
         if self.exception:
             raise self.exception
         return self.result
