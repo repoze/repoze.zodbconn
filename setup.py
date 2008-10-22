@@ -27,8 +27,7 @@ CHANGES = open(os.path.join(here, 'CHANGES.txt')).read()
 
 setup(name='repoze.zodbconn',
       version=__version__,
-      description=('Middleware which makes ZODB connections available to'
-                   'downstream applications'),
+      description=('Makes it possible to construct ZODB databases from URIs'),
       long_description=README + '\n\n' + CHANGES,
       classifiers=[
         "Development Status :: 3 - Alpha",
@@ -50,7 +49,7 @@ setup(name='repoze.zodbconn',
       zip_safe=False,
       tests_require = ['ZODB3'],
       install_requires=['ZODB3'],
-      test_suite="repoze.zodbconn.tests",
+      test_suite="repoze.zodbconn",
       entry_points = """\
       """
       )
