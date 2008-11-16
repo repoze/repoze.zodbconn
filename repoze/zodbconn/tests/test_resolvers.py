@@ -28,7 +28,7 @@ class Base:
         args = resolver.interpret_kwargs(kwargs)
         keys = args.keys()
         keys.sort()
-        self.assertEqual(keys, names)
+        self.assertEqual(sorted(keys), sorted(names))
         for name, value in args.items():
             self.assertEqual(value, 10)
 
@@ -79,26 +79,50 @@ class TestFileStorgeURIResolver(Base, unittest.TestCase):
         import shutil
         shutil.rmtree(self.tmpdir)
 
-    def test_prepare_abspath(self):
+    def test_call_abspath(self):
         resolver = self._makeOne()
-        k, args, kw = resolver.prepare('file:///tmp/foo/bar?read_only=true')
+        k, args, kw, factory = resolver('file:///tmp/foo/bar?read_only=true')
         self.assertEqual(args, ('/tmp/foo/bar',))
         self.assertEqual(kw, {'read_only':1})
         
-    def test_prepare_normpath(self):
+    def test_call_normpath(self):
         resolver = self._makeOne()
-        k, args, kw = resolver.prepare('file:///tmp/../foo/bar?read_only=true')
+        k, args, kw, factory = resolver('file:///tmp/../foo/bar?read_only=true')
         self.assertEqual(args, ('/foo/bar',))
         self.assertEqual(kw, {'read_only':1})
 
-    def test_call(self):
+    def test_invoke_factory(self):
         import os
         self.failIf(os.path.exists(os.path.join(self.tmpdir, 'db.db')))
         resolver = self._makeOne()
-        k, factory = resolver('file://%s/db.db?quota=200' % self.tmpdir)
+        k, args, kw, factory = resolver(
+            'file://%s/db.db?quota=200' % self.tmpdir)
         self.assertEqual(k, (('%s/db.db' % self.tmpdir,), (('quota', 200),)))
         db = factory()
         self.failUnless(os.path.exists(os.path.join(self.tmpdir, 'db.db')))
+
+    def test_demostorage(self):
+        resolver = self._makeOne()
+        k, args, kw, factory = resolver(
+            'file:///tmp/../foo/bar?demostorage=true')
+        self.assertEqual(args, ('/foo/bar',))
+        self.assertEqual(kw, {})
+
+    def test_blobstorage(self):
+        resolver = self._makeOne()
+        k, args, kw, factory = resolver(
+            ('file:///tmp/../foo/bar'
+             '?blobstorage_dir=/foo/bar&blobstorage_layout=bushy'))
+        self.assertEqual(args, ('/foo/bar',))
+        self.assertEqual(kw, {})
+
+    def test_blobstorage_and_demostorage(self):
+        resolver = self._makeOne()
+        k, args, kw, factory = resolver(
+            ('file:///tmp/../foo/bar?demostorage=true'
+             '&blobstorage_dir=/foo/bar&blobstorage_layout=bushy'))
+        self.assertEqual(args, ('/foo/bar',))
+        self.assertEqual(kw, {})
 
 class TestClientStorageURIResolver(unittest.TestCase):
     def _getTargetClass(self):
@@ -109,25 +133,30 @@ class TestClientStorageURIResolver(unittest.TestCase):
         klass = self._getTargetClass()
         return klass()
 
-    def test_prepare_tcp(self):
+    def test_call_tcp(self):
         resolver = self._makeOne()
-        k, args, kw = resolver.prepare('zeo://localhost:8080?debug=true')
+        k, args, kw, factory = resolver('zeo://localhost:8080?debug=true')
         self.assertEqual(args, (('localhost', 8080),))
         self.assertEqual(kw, {'debug':1})
         self.assertEqual(k, ((('localhost', 8080),), (('debug', 1),)))
 
-    def test_prepare_unix(self):
+    def test_call_unix(self):
         resolver = self._makeOne()
-        k, args, kw = resolver.prepare('zeo:///var/sock?debug=true')
+        k, args, kw, factory = resolver('zeo:///var/sock?debug=true')
         self.assertEqual(args, ('/var/sock',))
         self.assertEqual(kw, {'debug':1})
         self.assertEqual(k, (('/var/sock',), (('debug', 1),)))
 
-    def test_call(self):
+    def test_invoke_factory(self):
         resolver = self._makeOne()
-        k, factory = resolver('zeo:///var/nosuchfile?wait=false')
+        k, args, kw, factory = resolver('zeo:///var/nosuchfile?wait=false')
         self.assertEqual(k, (('/var/nosuchfile',), (('wait', 0),)))
         from ZEO.ClientStorage import ClientDisconnected
         self.assertRaises(ClientDisconnected, factory)
 
+    def test_demostorage(self):
+        resolver = self._makeOne()
+        k, args, kw, factory = resolver('zeo:///var/sock?demostorage=true')
+        self.assertEqual(args, ('/var/sock',))
+        self.assertEqual(kw, {})
 

@@ -1,10 +1,15 @@
+import os
+import cgi
+import urlparse
+
 from repoze.zodbconn.datatypes import byte_size
 from repoze.zodbconn.datatypes import FALSETYPES
 from repoze.zodbconn.datatypes import TRUETYPES
 
-import os
-import cgi
-import urlparse
+from ZODB.FileStorage.FileStorage import FileStorage
+from ZODB.DemoStorage import DemoStorage
+from ZODB.blob import BlobStorage
+from ZODB.DB import DB
 
 def interpret_int_args(argnames, kw):
     newkw = {}
@@ -55,10 +60,10 @@ class Resolver(object):
         return new
 
 class FileStorageURIResolver(Resolver):
-    _int_args = ('create', 'read_only')
-    _string_args = ()
+    _int_args = ('create', 'read_only', 'demostorage')
+    _string_args = ('blobstorage_dir', 'blobstorage_layout')
     _bytesize_args = ('quota',)
-    def prepare(self, uri):
+    def __call__(self, uri):
         (scheme, netloc, path, query, frag) = urlparse.urlsplit(uri)
          # urlparse doesnt understand file URLs and stuffs everything into path
         (scheme, netloc, path, query, frag) = urlparse.urlsplit('http:' + path)
@@ -69,25 +74,54 @@ class FileStorageURIResolver(Resolver):
         items.sort()
         args = (path,)
         key = (args, tuple(items))
-        return key, args, kw
+        demostorage = False
 
-    def __call__(self, uri):
-        key, args, kw = self.prepare(uri)
-        def factory():
-            from ZODB.FileStorage.FileStorage import FileStorage
-            from ZODB.DB import DB
-            return DB(FileStorage(*args, **kw))
-        return key, factory
+        if 'demostorage'in kw:
+            kw.pop('demostorage')
+            demostorage = True
+
+        blobstorage_dir = None
+        blobstorage_layout = 'automatic'
+        if 'blobstorage_dir' in kw:
+            blobstorage_dir = kw.pop('blobstorage_dir')
+        if 'blobstorage_layout' in kw:
+            blobstorage_layout = kw.pop('blobstorage_layout')
+
+        if demostorage and blobstorage_dir:
+            def factory():
+                filestorage = FileStorage(*args, **kw)
+                demostorage = DemoStorage(base=filestorage)
+                blobstorage = BlobStorage(blobstorage_dir, demostorage,
+                                          blobstorage_layout)
+                return DB(blobstorage)
+        elif blobstorage_dir:
+            def factory():
+                filestorage = FileStorage(*args, **kw)
+                blobstorage = BlobStorage(blobstorage_dir, filestorage,
+                                          blobstorage_layout)
+                return DB(blobstorage)
+        elif demostorage:
+            def factory():
+                filestorage = FileStorage(*args, **kw)
+                demostorage = DemoStorage(base=filestorage)
+                return DB(demostorage)
+        else:
+            def factory():
+                filestorage = FileStorage(*args, **kw)
+                return DB(filestorage)
+
+        return key, args, kw, factory
 
 class ClientStorageURIResolver(Resolver):
     _int_args = ('debug', 'min_disconnect_poll', 'max_disconnect_poll',
-                  'wait_for_server_on_startup', 'wait', 'wait_timeout',
-                  'read_only', 'read_only_fallback', 'shared_blob_dir')
+                 'wait_for_server_on_startup', 'wait', 'wait_timeout',
+                 'read_only', 'read_only_fallback', 'shared_blob_dir',
+                 'demostorage')
     _string_args = ('storage', 'name', 'client', 'var', 'username',
-                     'password', 'realm', 'blob_dir')
+                    'password', 'realm', 'blob_dir')
     _bytesize_args = ('cache_size', )
 
-    def prepare(self, uri):
+    def __call__(self, uri):
         (scheme, netloc, path, query, frag) = urlparse.urlsplit(uri)
          # urlparse doesnt understand zeo URLs and stuffs everything into path
         (scheme, netloc, path, query, frag) = urlparse.urlsplit('http:' + path)
@@ -109,15 +143,19 @@ class ClientStorageURIResolver(Resolver):
         items = kw.items()
         items.sort()
         key = (args, tuple(items))
-        return key, args, kw
-
-    def __call__(self, uri):
-        key, args, kw = self.prepare(uri)
-        def factory():
-            from ZEO.ClientStorage import ClientStorage
-            from ZODB.DB import DB
-            return DB(ClientStorage(*args, **kw))
-        return key, factory
+        if 'demostorage' in kw:
+            kw.pop('demostorage')
+            def factory():
+                from ZEO.ClientStorage import ClientStorage
+                from ZODB.DB import DB
+                from ZODB.DemoStorage import DemoStorage
+                return DB(DemoStorage(base=ClientStorage(*args, **kw)))
+        else:
+            def factory():
+                from ZEO.ClientStorage import ClientStorage
+                from ZODB.DB import DB
+                return DB(ClientStorage(*args, **kw))
+        return key, args, kw, factory
 
 RESOLVERS = {
     'zeo':ClientStorageURIResolver(),

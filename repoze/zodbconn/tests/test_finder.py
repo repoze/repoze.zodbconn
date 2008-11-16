@@ -3,7 +3,7 @@ import unittest
 class TestDBFactoryFromURI(unittest.TestCase):
     def setUp(self):
         from repoze.zodbconn.resolvers import RESOLVERS
-        RESOLVERS['foo'] = lambda *arg: ('key', 'factory')
+        RESOLVERS['foo'] = lambda *arg: ('key', 'arg', 'kw', 'factory')
         
     def tearDown(self):
         from repoze.zodbconn.resolvers import RESOLVERS
@@ -15,7 +15,8 @@ class TestDBFactoryFromURI(unittest.TestCase):
 
     def test_it(self):
         dbfactory_from_uri = self._getFUT()
-        self.assertEqual(dbfactory_from_uri('foo://abc'), ('key', 'factory'))
+        self.assertEqual(dbfactory_from_uri('foo://abc'),
+                         ('key', 'arg', 'kw', 'factory'))
         self.assertRaises(ValueError, dbfactory_from_uri, 'bar://abc')
 
 class TestPersistentApplicationFinder(unittest.TestCase):
@@ -25,7 +26,7 @@ class TestPersistentApplicationFinder(unittest.TestCase):
         self.db = DummyDB(self.root)
         def dbfactory():
             return self.db
-        RESOLVERS['foo'] = lambda *arg: ('key', dbfactory)
+        RESOLVERS['foo'] = lambda *arg: ('key', 'arg', 'kw', dbfactory)
         
     def tearDown(self):
         from repoze.zodbconn.resolvers import RESOLVERS

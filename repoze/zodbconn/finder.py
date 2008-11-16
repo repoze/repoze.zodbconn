@@ -16,7 +16,7 @@ class PersistentApplicationFinder:
 
     def __call__(self, environ):
         if self.db is None:
-            key, dbfactory = dbfactory_from_uri(self.uri)
+            _, _, _, dbfactory = dbfactory_from_uri(self.uri)
             self.db = dbfactory()
         conn = self.db.open()
         root = conn.root()
