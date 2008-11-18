@@ -30,3 +30,19 @@ root object in a ZODB for your application.::
    app = finder(environ)
    # When environ dies, the ZODB connection is closed
    del environ
+
+Middleware to Close a Connection
+--------------------------------
+
+If you use the ``PersistentApplicationFinder`` class, it inserts a key
+in the environment which is a "closer".  When the environment is
+garbage collected, the closer will usually be called.  If you're
+having problems with this (the environment is not garbage collected,
+for some reason, for instance), you can use the "closer" middleware at
+the top of your pipeline::
+
+  egg:repoze.zodbconn#closer
+
+This will cause the key to be deleted explicitly rather than relying
+on garbage collection.
+

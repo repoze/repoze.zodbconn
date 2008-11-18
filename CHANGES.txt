@@ -1,4 +1,6 @@
-Next release
+0.3
+
+  Add 'egg:repoze.zodbconn#closer' middleware.
 
   Add blobstorage and demostorage support to zeo and file resolvers.
 

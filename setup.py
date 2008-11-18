@@ -12,7 +12,7 @@
 #
 ##############################################################################
 
-__version__ = '0.2'
+__version__ = '0.3'
 
 import os
 
@@ -50,6 +50,8 @@ setup(name='repoze.zodbconn',
       install_requires=['ZODB3'],
       test_suite="repoze.zodbconn",
       entry_points = """\
+      [paste.filter_app_factory]
+      closer = repoze.zodbconn.middleware:make_middleware
       """
       )
 
