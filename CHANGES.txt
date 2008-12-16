@@ -1,4 +1,4 @@
-Next release
+0.4
 
   Add ``connection_cache_size``, ``connection_pool_size``, and
   ``database_name`` arguments to both FileStorage and ClientStorage
