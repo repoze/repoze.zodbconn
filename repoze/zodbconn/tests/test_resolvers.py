@@ -61,7 +61,6 @@ class Base:
         kwargs = f({'read_only':'false'})
         self.assertEqual(kwargs, {'read_only':0})
 
-
 class TestFileStorgeURIResolver(Base, unittest.TestCase):
     def _getTargetClass(self):
         from repoze.zodbconn.resolvers import FileStorageURIResolver
@@ -97,7 +96,11 @@ class TestFileStorgeURIResolver(Base, unittest.TestCase):
         resolver = self._makeOne()
         k, args, kw, factory = resolver(
             'file://%s/db.db?quota=200' % self.tmpdir)
-        self.assertEqual(k, (('%s/db.db' % self.tmpdir,), (('quota', 200),)))
+        self.assertEqual(k,
+                         (('%s/db.db' % self.tmpdir,), (('quota', 200),),
+                          (('cache_size', 10000), ('database_name', 'unnamed'),
+                           ('pool_size', 7)))
+                         )
         db = factory()
         self.failUnless(os.path.exists(os.path.join(self.tmpdir, 'db.db')))
 
@@ -124,6 +127,16 @@ class TestFileStorgeURIResolver(Base, unittest.TestCase):
         self.assertEqual(args, ('/foo/bar',))
         self.assertEqual(kw, {})
 
+    def test_dbargs(self):
+        resolver = self._makeOne()
+        k, args, kw, factory = resolver(
+            ('file:///tmp/../foo/bar?connection_pool_size=1'
+             '&connection_cache_size=1&database_name=dbname'))
+        self.assertEqual(k[2],
+                         (('cache_size', 1), ('database_name', 'dbname'),
+                          ('pool_size', 1)))
+        
+
 class TestClientStorageURIResolver(unittest.TestCase):
     def _getTargetClass(self):
         from repoze.zodbconn.resolvers import ClientStorageURIResolver
@@ -138,19 +151,30 @@ class TestClientStorageURIResolver(unittest.TestCase):
         k, args, kw, factory = resolver('zeo://localhost:8080?debug=true')
         self.assertEqual(args, (('localhost', 8080),))
         self.assertEqual(kw, {'debug':1})
-        self.assertEqual(k, ((('localhost', 8080),), (('debug', 1),)))
+        self.assertEqual(k,
+                         ((('localhost', 8080),), (('debug', 1),),
+                          (('cache_size', 10000), ('database_name','unnamed'),
+                           ('pool_size', 7))))
 
     def test_call_unix(self):
         resolver = self._makeOne()
         k, args, kw, factory = resolver('zeo:///var/sock?debug=true')
         self.assertEqual(args, ('/var/sock',))
         self.assertEqual(kw, {'debug':1})
-        self.assertEqual(k, (('/var/sock',), (('debug', 1),)))
+        self.assertEqual(k,
+                         (('/var/sock',),
+                          (('debug', 1),),
+                          (('cache_size', 10000),
+                           ('database_name', 'unnamed'),
+                           ('pool_size', 7))))
 
     def test_invoke_factory(self):
         resolver = self._makeOne()
         k, args, kw, factory = resolver('zeo:///var/nosuchfile?wait=false')
-        self.assertEqual(k, (('/var/nosuchfile',), (('wait', 0),)))
+        self.assertEqual(k, (('/var/nosuchfile',),
+                             (('wait', 0),),
+                             (('cache_size', 10000),
+                              ('database_name', 'unnamed'), ('pool_size', 7))))
         from ZEO.ClientStorage import ClientDisconnected
         self.assertRaises(ClientDisconnected, factory)
 
@@ -160,3 +184,12 @@ class TestClientStorageURIResolver(unittest.TestCase):
         self.assertEqual(args, ('/var/sock',))
         self.assertEqual(kw, {})
 
+    def test_dbargs(self):
+        resolver = self._makeOne()
+        k, args, kw, factory = resolver('zeo://localhost:8080?debug=true&'
+                                        'connection_pool_size=1&'
+                                        'connection_cache_size=1&'
+                                        'database_name=dbname')
+        self.assertEqual(k[2],
+                         (('cache_size', 1), ('database_name', 'dbname'),
+                          ('pool_size', 1)))

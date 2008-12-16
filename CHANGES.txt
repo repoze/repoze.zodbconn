@@ -1,3 +1,17 @@
+Next release
+
+  Add ``connection_cache_size``, ``connection_pool_size``, and
+  ``database_name`` arguments to both FileStorage and ClientStorage
+  URI resolver schemes.  ``connection_cache_size`` represents the ZODB
+  object cache size (the ``cache_size`` parameter to the DB
+  constructor), ``connection_pool_size`` represents the ZODB
+  connection pool size (the ``pool_size`` parameter to the DB
+  constructor), and ``database_name`` represents the ZODB database
+  name (the ``database_name`` parameter to the DB constructor).
+  ``connection_cache_size`` defaults to 10000 (overriding the too-low
+  DB constructor default of 400), ``connection_pool_size`` defaults to
+  7, and ``database_name`` defaults to ``unnamed``.
+
 0.3
 
   Add 'egg:repoze.zodbconn#closer' middleware.

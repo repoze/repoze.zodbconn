@@ -60,8 +60,9 @@ class Resolver(object):
         return new
 
 class FileStorageURIResolver(Resolver):
-    _int_args = ('create', 'read_only', 'demostorage')
-    _string_args = ('blobstorage_dir', 'blobstorage_layout')
+    _int_args = ('create', 'read_only', 'demostorage', 'connection_cache_size',
+                 'connection_pool_size')
+    _string_args = ('blobstorage_dir', 'blobstorage_layout', 'database_name')
     _bytesize_args = ('quota',)
     def __call__(self, uri):
         (scheme, netloc, path, query, frag) = urlparse.urlsplit(uri)
@@ -70,10 +71,13 @@ class FileStorageURIResolver(Resolver):
         path = os.path.normpath(path)
         kw = dict(cgi.parse_qsl(query))
         kw = self.interpret_kwargs(kw)
+        dbkw = get_dbkw(kw)
         items = kw.items()
         items.sort()
         args = (path,)
-        key = (args, tuple(items))
+        dbitems = dbkw.items()
+        dbitems.sort()
+        key = (args, tuple(items), tuple(dbitems))
         demostorage = False
 
         if 'demostorage'in kw:
@@ -93,22 +97,22 @@ class FileStorageURIResolver(Resolver):
                 demostorage = DemoStorage(base=filestorage)
                 blobstorage = BlobStorage(blobstorage_dir, demostorage,
                                           blobstorage_layout)
-                return DB(blobstorage)
+                return DB(blobstorage, **dbkw)
         elif blobstorage_dir:
             def factory():
                 filestorage = FileStorage(*args, **kw)
                 blobstorage = BlobStorage(blobstorage_dir, filestorage,
                                           blobstorage_layout)
-                return DB(blobstorage)
+                return DB(blobstorage, **dbkw)
         elif demostorage:
             def factory():
                 filestorage = FileStorage(*args, **kw)
                 demostorage = DemoStorage(base=filestorage)
-                return DB(demostorage)
+                return DB(demostorage, **dbkw)
         else:
             def factory():
                 filestorage = FileStorage(*args, **kw)
-                return DB(filestorage)
+                return DB(filestorage, **dbkw)
 
         return key, args, kw, factory
 
@@ -116,9 +120,10 @@ class ClientStorageURIResolver(Resolver):
     _int_args = ('debug', 'min_disconnect_poll', 'max_disconnect_poll',
                  'wait_for_server_on_startup', 'wait', 'wait_timeout',
                  'read_only', 'read_only_fallback', 'shared_blob_dir',
-                 'demostorage')
+                 'demostorage', 'connection_cache_size',
+                 'connection_pool_size')
     _string_args = ('storage', 'name', 'client', 'var', 'username',
-                    'password', 'realm', 'blob_dir')
+                    'password', 'realm', 'blob_dir', 'database_name')
     _bytesize_args = ('cache_size', )
 
     def __call__(self, uri):
@@ -140,22 +145,42 @@ class ClientStorageURIResolver(Resolver):
             args = (path,)
         kw = dict(cgi.parse_qsl(query))
         kw = self.interpret_kwargs(kw)
+        dbkw = get_dbkw(kw)
         items = kw.items()
         items.sort()
-        key = (args, tuple(items))
+        dbitems = dbkw.items()
+        dbitems.sort()
+        key = (args, tuple(items), tuple(dbitems))
         if 'demostorage' in kw:
             kw.pop('demostorage')
             def factory():
                 from ZEO.ClientStorage import ClientStorage
                 from ZODB.DB import DB
                 from ZODB.DemoStorage import DemoStorage
-                return DB(DemoStorage(base=ClientStorage(*args, **kw)))
+                demostorage = DemoStorage(base=ClientStorage(*args, **kw))
+                return DB(demostorage, **dbkw)
         else:
             def factory():
                 from ZEO.ClientStorage import ClientStorage
                 from ZODB.DB import DB
-                return DB(ClientStorage(*args, **kw))
+                clientstorage = ClientStorage(*args, **kw)
+                return DB(clientstorage, **dbkw)
         return key, args, kw, factory
+
+def get_dbkw(kw):
+    dbkw = {}
+    dbkw['cache_size'] = 10000
+    dbkw['pool_size'] = 7
+    dbkw['database_name'] = 'unnamed'
+    if 'connection_cache_size' in kw:
+        dbkw['cache_size'] = int(kw.pop('connection_cache_size'))
+    if 'connection_pool_size' in kw:
+        dbkw['pool_size'] = int(kw.pop('connection_pool_size'))
+    if 'database_name' in kw:
+        dbkw['database_name'] = kw.pop('database_name')
+
+    return dbkw
+
 
 RESOLVERS = {
     'zeo':ClientStorageURIResolver(),
