@@ -96,13 +96,13 @@ class FileStorageURIResolver(Resolver):
                 filestorage = FileStorage(*args, **kw)
                 demostorage = DemoStorage(base=filestorage)
                 blobstorage = BlobStorage(blobstorage_dir, demostorage,
-                                          blobstorage_layout)
+                                          layout=blobstorage_layout)
                 return DB(blobstorage, **dbkw)
         elif blobstorage_dir:
             def factory():
                 filestorage = FileStorage(*args, **kw)
                 blobstorage = BlobStorage(blobstorage_dir, filestorage,
-                                          blobstorage_layout)
+                                          layout=blobstorage_layout)
                 return DB(blobstorage, **dbkw)
         elif demostorage:
             def factory():
