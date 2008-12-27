@@ -1,3 +1,10 @@
+0.5 
+
+  Pass ``layout`` to BlobStorage as a kwarg explicitly (for forward
+  compatibility).
+
+  Depend on ZODB3 3.8.1+.
+
 0.4
 
   Add ``connection_cache_size``, ``connection_pool_size``, and

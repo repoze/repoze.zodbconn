@@ -21,6 +21,10 @@ use_setuptools()
 
 from setuptools import setup, find_packages
 
+requires = [
+    'ZODB3 >= 3.8.1',
+    ]
+    
 here = os.path.abspath(os.path.dirname(__file__))
 README = open(os.path.join(here, 'README.txt')).read()
 CHANGES = open(os.path.join(here, 'CHANGES.txt')).read()
@@ -46,8 +50,8 @@ setup(name='repoze.zodbconn',
       include_package_data=True,
       namespace_packages=['repoze'],
       zip_safe=False,
-      tests_require = ['ZODB3'],
-      install_requires=['ZODB3'],
+      tests_require =  requires,
+      install_requires = requires,
       test_suite="repoze.zodbconn",
       entry_points = """\
       [paste.filter_app_factory]
