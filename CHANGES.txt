@@ -1,35 +1,55 @@
-0.5 
+Next Release
+============
 
-  Pass ``layout`` to BlobStorage as a kwarg explicitly (for forward
-  compatibility).
+Backwards Incompatibilities
+----------------------------
 
-  Depend on ZODB3 3.8.1+.
+``dbfactory_from_uri`` now returns only a single argument (the
+factory).
 
-0.4
+Features
+--------
 
-  Add ``connection_cache_size``, ``connection_pool_size``, and
-  ``database_name`` arguments to both FileStorage and ClientStorage
-  URI resolver schemes.  ``connection_cache_size`` represents the ZODB
-  object cache size (the ``cache_size`` parameter to the DB
-  constructor), ``connection_pool_size`` represents the ZODB
-  connection pool size (the ``pool_size`` parameter to the DB
-  constructor), and ``database_name`` represents the ZODB database
-  name (the ``database_name`` parameter to the DB constructor).
-  ``connection_cache_size`` defaults to 10000 (overriding the too-low
-  DB constructor default of 400), ``connection_pool_size`` defaults to
-  7, and ``database_name`` defaults to ``unnamed``.
+Docs updated with argument values for ``file://`` and ``zeo://`` URI
+schemes; this file converted to real REST.
 
-0.3
+0.5 (unknown)
+=============
 
-  Add 'egg:repoze.zodbconn#closer' middleware.
+Pass ``layout`` to BlobStorage as a kwarg explicitly (for forward
+compatibility).
 
-  Add blobstorage and demostorage support to zeo and file resolvers.
+Depend on ZODB3 3.8.1+.
 
-0.2
+0.4 (unknown)
+=============
 
-  Unknown changes
+Add ``connection_cache_size``, ``connection_pool_size``, and
+``database_name`` arguments to both FileStorage and ClientStorage URI
+resolver schemes.  ``connection_cache_size`` represents the ZODB
+object cache size (the ``cache_size`` parameter to the DB
+constructor), ``connection_pool_size`` represents the ZODB connection
+pool size (the ``pool_size`` parameter to the DB constructor), and
+``database_name`` represents the ZODB database name (the
+``database_name`` parameter to the DB constructor).
+``connection_cache_size`` defaults to 10000 (overriding the too-low DB
+constructor default of 400), ``connection_pool_size`` defaults to 7,
+and ``database_name`` defaults to ``unnamed``.
 
-0.1
+0.3 (unknown)
+=============
 
-  Initial release.
+Add 'egg:repoze.zodbconn#closer' middleware.
+
+Add blobstorage and demostorage support to zeo and file resolvers.
+
+0.2 (unknown)
+=============
+
+Unknown changes
+
+0.1 (unknown)
+=============
+
+Initial release.
 

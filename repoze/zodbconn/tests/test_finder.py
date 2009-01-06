@@ -15,8 +15,7 @@ class TestDBFactoryFromURI(unittest.TestCase):
 
     def test_it(self):
         dbfactory_from_uri = self._getFUT()
-        self.assertEqual(dbfactory_from_uri('foo://abc'),
-                         ('key', 'arg', 'kw', 'factory'))
+        self.assertEqual(dbfactory_from_uri('foo://abc'), 'factory')
         self.assertRaises(ValueError, dbfactory_from_uri, 'bar://abc')
 
 class TestPersistentApplicationFinder(unittest.TestCase):

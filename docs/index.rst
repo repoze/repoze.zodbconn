@@ -7,7 +7,8 @@ specifications.
 .. toctree::
    :maxdepth: 2
 
-   narr.rst
+   narr
+   changes
 
 Indices and tables
 ------------------
