@@ -1,11 +1,14 @@
-0.7 (?)
-=======
+0.7 (2009-04-23)
+================
 
-* Added support for multi-databases in PersistentApplicationFinder.
-  Just pass multiple URIs to the constructor, either as a list of
-  strings or a single string with URIs separated by whitespace. Each
-  database must have a distinct database_name. The first URI specifies
-  the root database.
+Features
+--------
+
+Added support for multi-databases in PersistentApplicationFinder.
+Just pass multiple URIs to the constructor, either as a list of
+strings or a single string with URIs separated by whitespace. Each
+database must have a distinct database_name. The first URI specifies
+the root database.
 
 0.6 (2008-01-06)
 ================
