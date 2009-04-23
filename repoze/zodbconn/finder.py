@@ -10,14 +10,28 @@ class Cleanup:
 
 class PersistentApplicationFinder:
     db = None
-    def __init__(self, uri, appmaker):
-        self.uri = uri
+
+    def __init__(self, uris, appmaker):
+        if isinstance(uris, basestring):
+            uris = uris.split()
+        self.uris = uris
         self.appmaker = appmaker
 
     def __call__(self, environ):
         if self.db is None:
-            dbfactory = dbfactory_from_uri(self.uri)
-            self.db = dbfactory()
+            databases = {}
+            for uri in self.uris:
+                dbfactory = dbfactory_from_uri(uri)
+                db = dbfactory()
+                if db.database_name in databases:
+                    raise ValueError("database_name %r already in databases" %
+                        db.database_name)
+                # link the databases together
+                databases[db.database_name] = db
+                db.databases = databases
+                if self.db is None:
+                    # the first database in the list of URIs is the root
+                    self.db = db
         conn = self.db.open()
         root = conn.root()
         app = self.appmaker(root)
