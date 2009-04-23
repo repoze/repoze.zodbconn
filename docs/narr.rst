@@ -191,6 +191,53 @@ object in a ZODB for your application::
    # When environ dies, the ZODB connection is closed
    del environ
 
+You can connect to multiple ZODB databases by providing a list of URIs,
+or a series of URIs separated by whitespace, when creating the
+``PersistentApplicationFinder``. Multi-databases allow you to apply
+different data management policies for different kinds of data; for
+example, you might decide to put a catalog structure in a database with
+a large cache limit.
+
+The first URI in the list specifies the root database, meaning the
+database that contains the root object passed to the ``appmaker``
+callback. Each URI must have a distinct ``database_name``. The
+``database_name`` is used in all cross-database references, so do not
+change the ``database_name`` once you have stored data, or you will
+break the references.
+
+An example multi-database application::
+
+   def appmaker(root):
+       if not 'myapp' in root:
+           myapp = MyApp()
+           root['myapp'] = myapp
+
+           # put the catalog in the catalog database
+           catalog = MyCatalog()
+           catalog_conn = root._p_jar.get_connection('catalog')
+           catalog_conn.root()['catalog'] = catalog
+           catalog_conn.add(catalog)
+
+           # make a cross-database reference from myapp to the catalog
+           myapp.catalog = catalog
+
+           import transaction
+           transaction.commit()
+       return root['myapp']
+
+   from repoze.zodbconn.finder import PersistentApplicationFinder
+   uris = []
+   uris.append('zeo://localhost:9991/?database_name=main&storage=main')
+   uris.append('zeo://localhost:9991/?database_name=catalog&storage=catalog')
+   finder = PersistentApplicationFinder(uris, appmaker)
+   environ = {}
+   app = finder(environ)
+
+Application code does not need to do anything special to follow
+cross-database references. In the example above, other code can refer
+to ``myapp.catalog`` without knowing that a database boundary is being
+crossed.
+
 Middleware to Close a Connection
 --------------------------------
 
