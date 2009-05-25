@@ -65,9 +65,14 @@ class FileStorageURIResolver(Resolver):
     _string_args = ('blobstorage_dir', 'blobstorage_layout', 'database_name')
     _bytesize_args = ('quota',)
     def __call__(self, uri):
-        (scheme, netloc, path, query, frag) = urlparse.urlsplit(uri)
-         # urlparse doesnt understand file URLs and stuffs everything into path
-        (scheme, netloc, path, query, frag) = urlparse.urlsplit('http:' + path)
+        # we can't use urlparse.urlsplit here due to Windows filenames
+        prefix, rest = uri.split('file://', 1)
+        result = rest.split('?', 1)
+        if len(result) == 1:
+            path = result
+            query = ''
+        else:
+            path, query = result
         path = os.path.normpath(path)
         kw = dict(cgi.parse_qsl(query))
         kw = self.interpret_kwargs(kw)

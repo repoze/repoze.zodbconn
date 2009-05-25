@@ -83,7 +83,14 @@ class TestFileStorgeURIResolver(Base, unittest.TestCase):
         k, args, kw, factory = resolver('file:///tmp/foo/bar?read_only=true')
         self.assertEqual(args, ('/tmp/foo/bar',))
         self.assertEqual(kw, {'read_only':1})
-        
+
+    def test_call_abspath_windows(self):
+        resolver = self._makeOne()
+        k, args, kw, factory = resolver(
+            'file://C:\\foo\\bar?read_only=true')
+        self.assertEqual(args, ('C:\\foo\\bar',))
+        self.assertEqual(kw, {'read_only':1})
+
     def test_call_normpath(self):
         resolver = self._makeOne()
         k, args, kw, factory = resolver('file:///tmp/../foo/bar?read_only=true')

@@ -1,3 +1,13 @@
+0.8 (2009-05-25)
+================
+
+Features
+--------
+
+Fix a bug in FileStorageURIResolver whereby fully-qualified paths to
+Windows files (e.g. ``file://C:\foo\bar\baz?a=1``) were parsed
+incorrectly, resulting in a bogus file location.
+
 0.7 (2009-04-23)
 ================
 
