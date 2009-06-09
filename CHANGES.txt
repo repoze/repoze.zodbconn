@@ -4,6 +4,13 @@ Unreleased
 Features
 --------
 
+- Added a ``LoggingCleanup`` implementation which can be passed to
+  ``PersistentApplicationFinder``:  it logs counts of loaded and saved
+  objects for the connection between the time it is instantiated (i.e.,
+  whe the database connection is opened) and the time the connection is
+  closed.  See the "Customizing Connection Cleanup" section in the narrative
+  docs for notes on using this feature.
+
 - Added ``cleanup`` argument to constructor of ``PersistentApplicationFinder``,
   to allow applications to register a custom cleanup object factory.
   See the "Customizing Connection Cleanup" section in the narrative docs

@@ -212,6 +212,37 @@ stored in the WSGI environment:
   to the connection or to its ``close`` method.  The ``__del__`` method
   **may** perform other work, but **must not** raise any exception.
 
+The default cleanup implementation, ``repoze.zodbcon.finder:SimpleCleanup``,
+just closes the connection.  An alternate cleanup implementation,
+``repoze.zodbcon.finder:LoggingCleanup``, logs the number of objects loaded
+and stored for each request to a CSV file, e.g.::
+
+   "GET","/test.html",12,0
+   "POST","/edit.html",0,3
+
+To use this cleanup, you need to do two things:
+
+- Arrange for an writable file-like object to be present in the WSGI
+  environment under the key, ``repoze.zodbcon.loadsave``.
+
+- Pass the logging cleanup class to the PersistentAppFinder.  E.g.:
+
+.. code-block:: python
+
+    import your.package
+    from repoze.bfg.router import make_app as bfg_make_app
+    from repoze.zodbconn.finder import PersistentApplicationFinder
+    from repoze.zodbconn.finder import LoggingCleanup
+    from your.package.models import appmaker
+
+    def make_app(global_config, zodb_uri, **kw):
+        get_root = PersistentApplicationFinder(zodb_uri, appmaker,
+                                               LoggingCleanup)
+
+        app = bfg_make_app(get_root, your.package, options=kw)
+        return app
+
+
 
 Multi-Database Support
 ----------------------

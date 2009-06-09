@@ -1,10 +1,10 @@
 import unittest
 
-class TestCleanup(unittest.TestCase):
+class TestSimpleCleanup(unittest.TestCase):
 
     def _getTargetClass(self):
-        from repoze.zodbconn.finder import Cleanup
-        return Cleanup
+        from repoze.zodbconn.finder import SimpleCleanup
+        return SimpleCleanup
 
     def _makeOne(self, cleaner, environ):
         return self._getTargetClass()(cleaner, environ)
@@ -16,6 +16,44 @@ class TestCleanup(unittest.TestCase):
         cleanup = self._makeOne(conn, environ)
         del cleanup
         self.failUnless(root.closed)
+
+class TestLoggingCleanup(unittest.TestCase):
+
+    def _getTargetClass(self):
+        from repoze.zodbconn.finder import LoggingCleanup
+        return LoggingCleanup
+
+    def _makeOne(self, cleaner, environ):
+        return self._getTargetClass()(cleaner, environ)
+
+    def test___del___calls_cleaner_and_logs_no_qs(self):
+        logger = DummyLogger()
+        root = DummyRoot()
+        conn = DummyConn(root)
+        environ = {'REQUEST_METHOD': 'GET',
+                   'PATH_INFO': '/test',
+                   'repoze.zodbconn.loadsave': logger,
+                  }
+        cleanup = self._makeOne(conn, environ)
+        del cleanup
+        self.failUnless(root.closed)
+        self.assertEqual(len(logger._wrote), 1)
+        self.assertEqual(logger._wrote[0], '"GET","/test",0,0\n')
+
+    def test___del___calls_cleaner_and_logs_w_qs(self):
+        logger = DummyLogger()
+        root = DummyRoot()
+        conn = DummyConn(root)
+        environ = {'REQUEST_METHOD': 'GET',
+                   'PATH_INFO': '/test',
+                   'QUERY_STRING': 'foo=bar',
+                   'repoze.zodbconn.loadsave': logger,
+                  }
+        cleanup = self._makeOne(conn, environ)
+        del cleanup
+        self.failUnless(root.closed)
+        self.assertEqual(len(logger._wrote), 1)
+        self.assertEqual(logger._wrote[0], '"GET","/test?foo=bar",0,0\n')
 
 _marker = object()
 
@@ -46,13 +84,13 @@ class TestPersistentApplicationFinder(unittest.TestCase):
         return klass(uri, appmaker, cleanup)
 
     def test_ctor_no_cleanup(self):
-        from repoze.zodbconn.finder import Cleanup
+        from repoze.zodbconn.finder import SimpleCleanup
         def makeapp(root):
             pass
         finder = self._makeOne('foo://bar.baz', makeapp)
         self.assertEqual(finder.uris, ['foo://bar.baz'])
         self.assertEqual(finder.appmaker, makeapp)
-        self.failUnless(finder.cleanup is Cleanup)
+        self.failUnless(finder.cleanup is SimpleCleanup)
 
     def test_ctor_w_cleanup(self):
         def makeapp(root):
@@ -173,6 +211,8 @@ class DummyRoot:
 
 class DummyConn:
     closed = False
+    _loads = _saves = 0
+
     def __init__(self, rootob):
         self.rootob = rootob
 
@@ -181,6 +221,9 @@ class DummyConn:
 
     def close(self):
         self.rootob.closed = True
+
+    def getTransferCounts(self):
+        return self._loads, self._saves
 
 class DummyCleanup:
     def __init__(self, conn, environ):
@@ -196,3 +239,10 @@ class DummyDB:
 
     def open(self):
         return self.conn
+
+class DummyLogger:
+    def __init__(self):
+        self._wrote = []
+
+    def write(self, chunk):
+        self._wrote.append(chunk)

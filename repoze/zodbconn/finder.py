@@ -1,7 +1,7 @@
 import urlparse
 from repoze.zodbconn.resolvers import RESOLVERS
 
-class Cleanup:
+class SimpleCleanup:
     def __init__(self, conn, environ):
         # N.B.:  do *not* create a cycle by holding on to 'environ'!
         self.cleaner = conn.close
@@ -9,10 +9,38 @@ class Cleanup:
     def __del__(self):
         self.cleaner()
 
+class LoggingCleanup:
+    def __init__(self, conn, environ):
+        # N.B.:  do *not* create a cycle by holding on to 'environ'!
+        self.conn = conn
+        self.request_method = environ['REQUEST_METHOD']
+        self.path_info = environ['PATH_INFO']
+        self.query_string = environ.get('QUERY_STRING')
+        self.logger = environ.get('repoze.zodbconn.loadsave')
+        self.loads_before, self.stores_before = conn.getTransferCounts()
+
+    #############  WAAAAAAAAAAA!!!!!!########################################
+    # For some insane reason, the coverage module thinks this entire method
+    # is uncovered, in spite of the fact that the passing unit tests prove
+    # that both code paths get executed.
+    #########################################################################
+    def __del__(self): #pragma NO COVERAGE
+        loads_after, stores_after = self.conn.getTransferCounts()
+        self.conn.close()
+        if self.logger:
+            if self.query_string:
+                url = '%s?%s' % (self.path_info, self.query_string)
+            else:
+                url = self.path_info
+            loads = loads_after - self.loads_before
+            stores = stores_after - self.stores_before
+            self.logger.write('"%s","%s",%d,%d\n'
+                                % (self.request_method, url, loads, stores))
+
 class PersistentApplicationFinder:
     db = None
 
-    def __init__(self, uris, appmaker, cleanup=Cleanup):
+    def __init__(self, uris, appmaker, cleanup=SimpleCleanup):
         if isinstance(uris, basestring):
             uris = uris.split()
         self.uris = uris
