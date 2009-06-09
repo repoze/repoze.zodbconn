@@ -69,7 +69,7 @@ class FileStorageURIResolver(Resolver):
         prefix, rest = uri.split('file://', 1)
         result = rest.split('?', 1)
         if len(result) == 1:
-            path = result
+            path = result[0]
             query = ''
         else:
             path, query = result

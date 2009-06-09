@@ -78,6 +78,12 @@ class TestFileStorgeURIResolver(Base, unittest.TestCase):
         import shutil
         shutil.rmtree(self.tmpdir)
 
+    def test_call_no_qs(self):
+        resolver = self._makeOne()
+        k, args, kw, factory = resolver('file:///tmp/foo/bar')
+        self.assertEqual(args, ('/tmp/foo/bar',))
+        self.assertEqual(kw, {})
+
     def test_call_abspath(self):
         resolver = self._makeOne()
         k, args, kw, factory = resolver('file:///tmp/foo/bar?read_only=true')

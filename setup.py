@@ -50,9 +50,9 @@ setup(name='repoze.zodbconn',
       include_package_data=True,
       namespace_packages=['repoze'],
       zip_safe=False,
-      tests_require =  requires,
+      tests_require =  requires + ['nose', 'coverage'],
       install_requires = requires,
-      test_suite="repoze.zodbconn",
+      test_suite="nose.collector",
       entry_points = """\
       [paste.filter_app_factory]
       closer = repoze.zodbconn.middleware:make_middleware

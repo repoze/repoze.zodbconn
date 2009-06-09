@@ -1,1 +1,4 @@
+repoze.zodbconn TODOs
+=====================
 
+- [X] Enable read-only connections.

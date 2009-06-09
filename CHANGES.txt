@@ -1,3 +1,11 @@
+Unreleased
+==========
+
+Bug Fixes
+---------
+
+- Fixed breakage with ``file:`` URIs having no query string.
+
 0.8 (2009-05-25)
 ================
 
