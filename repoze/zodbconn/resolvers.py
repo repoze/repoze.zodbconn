@@ -163,13 +163,13 @@ class ClientStorageURIResolver(Resolver):
                 from ZODB.DB import DB
                 from ZODB.DemoStorage import DemoStorage
                 demostorage = DemoStorage(base=ClientStorage(*args, **kw))
-                return DB(demostorage, **dbkw)
+                return DB(demostorage, **dbkw) #pragma NO COVERAGE
         else:
             def factory():
                 from ZEO.ClientStorage import ClientStorage
                 from ZODB.DB import DB
                 clientstorage = ClientStorage(*args, **kw)
-                return DB(clientstorage, **dbkw)
+                return DB(clientstorage, **dbkw) #pragma NO COVERAGE
         return key, args, kw, factory
 
 def get_dbkw(kw):

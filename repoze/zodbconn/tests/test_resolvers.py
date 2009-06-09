@@ -62,6 +62,7 @@ class Base:
         self.assertEqual(kwargs, {'read_only':0})
 
 class TestFileStorgeURIResolver(Base, unittest.TestCase):
+
     def _getTargetClass(self):
         from repoze.zodbconn.resolvers import FileStorageURIResolver
         return FileStorageURIResolver
@@ -103,7 +104,7 @@ class TestFileStorgeURIResolver(Base, unittest.TestCase):
         self.assertEqual(args, ('/foo/bar',))
         self.assertEqual(kw, {'read_only':1})
 
-    def test_invoke_factory(self):
+    def test_invoke_factory_filestorage(self):
         import os
         self.failIf(os.path.exists(os.path.join(self.tmpdir, 'db.db')))
         resolver = self._makeOne()
@@ -124,6 +125,31 @@ class TestFileStorgeURIResolver(Base, unittest.TestCase):
         self.assertEqual(args, ('/foo/bar',))
         self.assertEqual(kw, {})
 
+    def test_invoke_factory_demostorage(self):
+        import os
+        from ZODB.DemoStorage import DemoStorage
+        from ZODB.FileStorage import FileStorage
+        DB_FILE = os.path.join(self.tmpdir, 'db.db')
+        self.failIf(os.path.exists(DB_FILE))
+        resolver = self._makeOne()
+        k, args, kw, factory = resolver(
+            'file://%s/db.db?quota=200&demostorage=true' % self.tmpdir)
+        self.assertEqual(k,
+                         (('%s/db.db' % self.tmpdir,),
+                          (('demostorage', 1),
+                           ('quota', 200),
+                          ),
+                          (('cache_size', 10000),
+                           ('database_name', 'unnamed'),
+                           ('pool_size', 7)
+                          ),
+                         )
+                        )
+        db = factory()
+        self.failUnless(isinstance(db._storage, DemoStorage))
+        self.failUnless(isinstance(db._storage._base, FileStorage))
+        self.failUnless(os.path.exists(DB_FILE))
+
     def test_blobstorage(self):
         resolver = self._makeOne()
         k, args, kw, factory = resolver(
@@ -132,6 +158,37 @@ class TestFileStorgeURIResolver(Base, unittest.TestCase):
         self.assertEqual(args, ('/foo/bar',))
         self.assertEqual(kw, {})
 
+    def test_invoke_factory_blobstorage(self):
+        import os
+        from ZODB.blob import BlobStorage
+        from ZODB.FileStorage import FileStorage
+        from zope.proxy import getProxiedObject
+        DB_FILE = os.path.join(self.tmpdir, 'db.db')
+        BLOB_DIR = os.path.join(self.tmpdir, 'blob')
+        self.failIf(os.path.exists(DB_FILE))
+        resolver = self._makeOne()
+        k, args, kw, factory = resolver(
+            'file://%s/db.db?quota=200'
+            '&blobstorage_dir=%s/blob'
+            '&blobstorage_layout=bushy' % (self.tmpdir, self.tmpdir))
+        self.assertEqual(k,
+                         (('%s/db.db' % self.tmpdir,),
+                          (('blobstorage_dir', '%s/blob' % self.tmpdir),
+                           ('blobstorage_layout', 'bushy'),
+                           ('quota', 200),
+                          ),
+                          (('cache_size', 10000),
+                           ('database_name', 'unnamed'),
+                           ('pool_size', 7)
+                          ),
+                         )
+                        )
+        db = factory()
+        self.failUnless(isinstance(db._storage, BlobStorage))
+        self.failUnless(isinstance(getProxiedObject(db._storage), FileStorage))
+        self.failUnless(os.path.exists(DB_FILE))
+        self.failUnless(os.path.exists(BLOB_DIR))
+
     def test_blobstorage_and_demostorage(self):
         resolver = self._makeOne()
         k, args, kw, factory = resolver(
@@ -139,6 +196,41 @@ class TestFileStorgeURIResolver(Base, unittest.TestCase):
              '&blobstorage_dir=/foo/bar&blobstorage_layout=bushy'))
         self.assertEqual(args, ('/foo/bar',))
         self.assertEqual(kw, {})
+
+    def test_invoke_factory_blobstorage_and_demostorage(self):
+        import os
+        from ZODB.blob import BlobStorage
+        from ZODB.DemoStorage import DemoStorage
+        from ZODB.FileStorage import FileStorage
+        from zope.proxy import getProxiedObject
+        DB_FILE = os.path.join(self.tmpdir, 'db.db')
+        BLOB_DIR = os.path.join(self.tmpdir, 'blob')
+        self.failIf(os.path.exists(DB_FILE))
+        resolver = self._makeOne()
+        k, args, kw, factory = resolver(
+            'file://%s/db.db?quota=200&demostorage=true'
+            '&blobstorage_dir=%s/blob'
+            '&blobstorage_layout=bushy' % (self.tmpdir, self.tmpdir))
+        self.assertEqual(k,
+                         (('%s/db.db' % self.tmpdir,),
+                          (('blobstorage_dir', '%s/blob' % self.tmpdir),
+                           ('blobstorage_layout', 'bushy'),
+                           ('demostorage', 1),
+                           ('quota', 200),
+                          ),
+                          (('cache_size', 10000),
+                           ('database_name', 'unnamed'),
+                           ('pool_size', 7)
+                          ),
+                         )
+                        )
+        db = factory()
+        self.failUnless(isinstance(db._storage, BlobStorage))
+        self.failUnless(isinstance(getProxiedObject(db._storage), DemoStorage))
+        self.failUnless(isinstance(getProxiedObject(db._storage)._base,
+                                   FileStorage))
+        self.failUnless(os.path.exists(DB_FILE))
+        self.failUnless(os.path.exists(BLOB_DIR))
 
     def test_dbargs(self):
         resolver = self._makeOne()
@@ -158,6 +250,16 @@ class TestClientStorageURIResolver(unittest.TestCase):
     def _makeOne(self):
         klass = self._getTargetClass()
         return klass()
+
+    def test_call_tcp_no_port(self):
+        resolver = self._makeOne()
+        k, args, kw, factory = resolver('zeo://localhost?debug=true')
+        self.assertEqual(args, (('localhost', 9991),))
+        self.assertEqual(kw, {'debug':1})
+        self.assertEqual(k,
+                         ((('localhost', 9991),), (('debug', 1),),
+                          (('cache_size', 10000), ('database_name','unnamed'),
+                           ('pool_size', 7))))
 
     def test_call_tcp(self):
         resolver = self._makeOne()
@@ -196,6 +298,21 @@ class TestClientStorageURIResolver(unittest.TestCase):
         k, args, kw, factory = resolver('zeo:///var/sock?demostorage=true')
         self.assertEqual(args, ('/var/sock',))
         self.assertEqual(kw, {})
+
+    def test_invoke_factory_demostorage(self):
+        resolver = self._makeOne()
+        k, args, kw, factory = resolver('zeo:///var/nosuchfile?wait=false'
+                                        '&demostorage=true')
+        self.assertEqual(k, (('/var/nosuchfile',),
+                             (('demostorage', 1),
+                              ('wait', 0),),
+                             (('cache_size', 10000),
+                              ('database_name', 'unnamed'),
+                              ('pool_size', 7),
+                             ),
+                            ))
+        from ZEO.ClientStorage import ClientDisconnected
+        self.assertRaises(ClientDisconnected, factory)
 
     def test_dbargs(self):
         resolver = self._makeOne()
