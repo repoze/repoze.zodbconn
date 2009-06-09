@@ -1,22 +1,21 @@
 import unittest
 
-class TestDBFactoryFromURI(unittest.TestCase):
-    def setUp(self):
-        from repoze.zodbconn.resolvers import RESOLVERS
-        RESOLVERS['foo'] = lambda *arg: ('key', 'arg', 'kw', 'factory')
-        
-    def tearDown(self):
-        from repoze.zodbconn.resolvers import RESOLVERS
-        del RESOLVERS['foo']
+class TestCleanup(unittest.TestCase):
 
-    def _getFUT(self):
-        from repoze.zodbconn.finder import dbfactory_from_uri
-        return dbfactory_from_uri
+    def _getTargetClass(self):
+        from repoze.zodbconn.finder import Cleanup
+        return Cleanup
 
-    def test_it(self):
-        dbfactory_from_uri = self._getFUT()
-        self.assertEqual(dbfactory_from_uri('foo://abc'), 'factory')
-        self.assertRaises(ValueError, dbfactory_from_uri, 'bar://abc')
+    def _makeOne(self, cleaner):
+        return self._getTargetClass()(cleaner)
+
+    def test___del___calls_cleaner(self):
+        _called_with = []
+        def _cleaner(*args, **kw):
+            _called_with.append((args, kw))
+        cleanup = self._makeOne(_cleaner)
+        del cleanup
+        self.assertEqual(_called_with, [((), {})])
 
 class TestPersistentApplicationFinder(unittest.TestCase):
     def setUp(self):
@@ -96,6 +95,24 @@ class TestPersistentApplicationFinder(unittest.TestCase):
         finder = self._makeOne('foo://bar.baz foo://bar.baz', makeapp)
         environ = {}
         self.assertRaises(ValueError, finder, environ)
+
+class TestDBFactoryFromURI(unittest.TestCase):
+    def setUp(self):
+        from repoze.zodbconn.resolvers import RESOLVERS
+        RESOLVERS['foo'] = lambda *arg: ('key', 'arg', 'kw', 'factory')
+        
+    def tearDown(self):
+        from repoze.zodbconn.resolvers import RESOLVERS
+        del RESOLVERS['foo']
+
+    def _getFUT(self):
+        from repoze.zodbconn.finder import dbfactory_from_uri
+        return dbfactory_from_uri
+
+    def test_it(self):
+        dbfactory_from_uri = self._getFUT()
+        self.assertEqual(dbfactory_from_uri('foo://abc'), 'factory')
+        self.assertRaises(ValueError, dbfactory_from_uri, 'bar://abc')
 
 
 class DummyRoot:
