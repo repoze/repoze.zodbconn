@@ -2,8 +2,9 @@ import urlparse
 from repoze.zodbconn.resolvers import RESOLVERS
 
 class Cleanup:
-    def __init__(self, cleaner):
-        self.cleaner = cleaner
+    def __init__(self, conn, environ):
+        # N.B.:  do *not* create a cycle by holding on to 'environ'!
+        self.cleaner = conn.close
 
     def __del__(self):
         self.cleaner()
@@ -11,11 +12,12 @@ class Cleanup:
 class PersistentApplicationFinder:
     db = None
 
-    def __init__(self, uris, appmaker):
+    def __init__(self, uris, appmaker, cleanup=Cleanup):
         if isinstance(uris, basestring):
             uris = uris.split()
         self.uris = uris
         self.appmaker = appmaker
+        self.cleanup = cleanup
 
     def __call__(self, environ):
         if self.db is None:
@@ -35,7 +37,7 @@ class PersistentApplicationFinder:
         conn = self.db.open()
         root = conn.root()
         app = self.appmaker(root)
-        environ['repoze.zodbconn.closer'] = Cleanup(conn.close)
+        environ['repoze.zodbconn.closer'] = self.cleanup(conn, environ)
         return app
 
 def dbfactory_from_uri(uri):

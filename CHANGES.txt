@@ -1,10 +1,18 @@
 Unreleased
 ==========
 
-Bug Fixes
----------
+Features
+--------
+
+- Added ``cleanup`` argument to constructor of ``PersistentApplicationFinder``,
+  to allow applications to register a custom cleanup object factory.
+  See the "Customizing Connection Cleanup" section in the narrative docs
+  for notes on using this feature.
 
 - 100% unit test coverage.
+
+Bug Fixes
+---------
 
 - Fixed breakage with ``file:`` URIs having no query string.
 

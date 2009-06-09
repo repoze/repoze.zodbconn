@@ -6,16 +6,18 @@ class TestCleanup(unittest.TestCase):
         from repoze.zodbconn.finder import Cleanup
         return Cleanup
 
-    def _makeOne(self, cleaner):
-        return self._getTargetClass()(cleaner)
+    def _makeOne(self, cleaner, environ):
+        return self._getTargetClass()(cleaner, environ)
 
     def test___del___calls_cleaner(self):
-        _called_with = []
-        def _cleaner(*args, **kw):
-            _called_with.append((args, kw))
-        cleanup = self._makeOne(_cleaner)
+        root = DummyRoot()
+        conn = DummyConn(root)
+        environ = {}
+        cleanup = self._makeOne(conn, environ)
         del cleanup
-        self.assertEqual(_called_with, [((), {})])
+        self.failUnless(root.closed)
+
+_marker = object()
 
 class TestPersistentApplicationFinder(unittest.TestCase):
     def setUp(self):
@@ -37,11 +39,32 @@ class TestPersistentApplicationFinder(unittest.TestCase):
         from repoze.zodbconn.finder import PersistentApplicationFinder
         return PersistentApplicationFinder
 
-    def _makeOne(self, uri, appmaker):
+    def _makeOne(self, uri, appmaker, cleanup=_marker):
         klass = self._getTargetClass()
-        return klass(uri, appmaker)
+        if cleanup is _marker:
+            return klass(uri, appmaker)
+        return klass(uri, appmaker, cleanup)
 
-    def test_call_no_db(self):
+    def test_ctor_no_cleanup(self):
+        from repoze.zodbconn.finder import Cleanup
+        def makeapp(root):
+            pass
+        finder = self._makeOne('foo://bar.baz', makeapp)
+        self.assertEqual(finder.uris, ['foo://bar.baz'])
+        self.assertEqual(finder.appmaker, makeapp)
+        self.failUnless(finder.cleanup is Cleanup)
+
+    def test_ctor_w_cleanup(self):
+        def makeapp(root):
+            pass
+        def cleanup(conn, environ):
+            pass
+        finder = self._makeOne('foo://bar.baz', makeapp, cleanup)
+        self.assertEqual(finder.uris, ['foo://bar.baz'])
+        self.assertEqual(finder.appmaker, makeapp)
+        self.failUnless(finder.cleanup is cleanup)
+
+    def test_call_no_db_no_cleanup(self):
         def makeapp(root):
             root.made = True
             return 'abc'
@@ -55,7 +78,22 @@ class TestPersistentApplicationFinder(unittest.TestCase):
         self.assertEqual(self.root.closed, True)
         self.assertEqual(finder.db, self.db)
 
-    def test_call_with_db(self):
+    def test_call_no_db_w_cleanup(self):
+        def makeapp(root):
+            root.made = True
+            return 'abc'
+        finder = self._makeOne('foo://bar.baz', makeapp, DummyCleanup)
+        environ = {}
+        app = finder(environ)
+        self.assertEqual(app, 'abc')
+        self.assertEqual(self.root.made, True)
+        self.assertEqual(self.root.closed, False)
+        self.assertEqual(environ['XXX'], None)
+        del environ['repoze.zodbconn.closer']
+        self.assertEqual(self.root.closed, True)
+        self.assertEqual(finder.db, self.db)
+
+    def test_call_with_db_no_cleanup(self):
         def makeapp(root):
             root.made = True
             return 'abc'
@@ -66,6 +104,21 @@ class TestPersistentApplicationFinder(unittest.TestCase):
         self.assertEqual(app, 'abc')
         self.assertEqual(self.root.made, True)
         self.assertEqual(self.root.closed, False)
+        del environ['repoze.zodbconn.closer']
+        self.assertEqual(self.root.closed, True)
+
+    def test_call_with_db_w_cleanup(self):
+        def makeapp(root):
+            root.made = True
+            return 'abc'
+        finder = self._makeOne('another://bar.baz', makeapp, DummyCleanup)
+        finder.db = DummyDB(self.root, 'another')
+        environ = {}
+        app = finder(environ)
+        self.assertEqual(app, 'abc')
+        self.assertEqual(self.root.made, True)
+        self.assertEqual(self.root.closed, False)
+        self.assertEqual(environ['XXX'], None)
         del environ['repoze.zodbconn.closer']
         self.assertEqual(self.root.closed, True)
 
@@ -100,7 +153,7 @@ class TestDBFactoryFromURI(unittest.TestCase):
     def setUp(self):
         from repoze.zodbconn.resolvers import RESOLVERS
         RESOLVERS['foo'] = lambda *arg: ('key', 'arg', 'kw', 'factory')
-        
+
     def tearDown(self):
         from repoze.zodbconn.resolvers import RESOLVERS
         del RESOLVERS['foo']
@@ -128,7 +181,14 @@ class DummyConn:
 
     def close(self):
         self.rootob.closed = True
-        
+
+class DummyCleanup:
+    def __init__(self, conn, environ):
+        self.conn = conn
+        environ['XXX'] = None
+    def __del__(self):
+        self.conn.close()
+
 class DummyDB:
     def __init__(self, rootob, database_name):
         self.conn = DummyConn(rootob)
@@ -136,6 +196,3 @@ class DummyDB:
 
     def open(self):
         return self.conn
-    
-
-    

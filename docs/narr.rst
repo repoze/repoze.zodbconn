@@ -191,6 +191,31 @@ object in a ZODB for your application::
    # When environ dies, the ZODB connection is closed
    del environ
 
+Customizing Connection Cleanup
+------------------------------
+
+The ``PersistentApplicationFinder`` helper takes an optional ``cleanup``
+argument, which should serve as a factory for an object which will be
+stored in the WSGI environment:
+
+- The factory will be called with two arguments, ``conn`` (the opened
+  ZODB connection) and ``environ`` (the WSGI environment).
+
+- The returned object **must not** hold a reference to ``environ``,
+  as its purpose is to have its ``__del__`` method called when the
+  ``environ`` is destroyed:  holding a reference would create a potentially
+  uncollectable cycle.  Instead, the object could store particular values
+  computed from the environment (e.g., the ``PATH_INFO``).
+
+- The returned object **must** contrive to close ``conn`` in its ``__del__``
+  method;  typically, this means that the returned object holds a reference
+  to the connection or to its ``close`` method.  The ``__del__`` method
+  **may** perform other work, but **must not** raise any exception.
+
+
+Multi-Database Support
+----------------------
+
 You can connect to multiple ZODB databases by providing a list of URIs,
 or a series of URIs separated by whitespace, when creating the
 ``PersistentApplicationFinder``. Multi-databases allow you to apply
