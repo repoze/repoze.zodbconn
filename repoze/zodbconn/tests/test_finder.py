@@ -32,9 +32,9 @@ class TestLoggingCleanup(unittest.TestCase):
         conn = DummyConn(root)
         environ = {'REQUEST_METHOD': 'GET',
                    'PATH_INFO': '/test',
-                   'repoze.zodbconn.loadsave': logger,
                   }
         cleanup = self._makeOne(conn, environ)
+        cleanup.logger = logger
         del cleanup
         self.failUnless(root.closed)
         self.assertEqual(len(logger._wrote), 1)
@@ -47,9 +47,9 @@ class TestLoggingCleanup(unittest.TestCase):
         environ = {'REQUEST_METHOD': 'GET',
                    'PATH_INFO': '/test',
                    'QUERY_STRING': 'foo=bar',
-                   'repoze.zodbconn.loadsave': logger,
                   }
         cleanup = self._makeOne(conn, environ)
+        cleanup.logger = logger
         del cleanup
         self.failUnless(root.closed)
         self.assertEqual(len(logger._wrote), 1)

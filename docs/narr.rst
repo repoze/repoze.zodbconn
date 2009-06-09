@@ -236,8 +236,19 @@ To use this cleanup, you need to do two things:
     from your.package.models import appmaker
 
     def make_app(global_config, zodb_uri, **kw):
+        logfile = kw.get('connection_log_file')
+        if logfile is not None:
+            logger = open(logfile, 'a')
+        else:
+            logger = None
+
+        def _makeCleanup(conn, environ):
+            cleanup = LoggingCleanup(conn, environ)
+            cleanup.logger = logger
+            return cleanup
+
         get_root = PersistentApplicationFinder(zodb_uri, appmaker,
-                                               LoggingCleanup)
+                                               _makeCleanup)
 
         app = bfg_make_app(get_root, your.package, options=kw)
         return app

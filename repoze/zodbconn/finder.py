@@ -10,13 +10,14 @@ class SimpleCleanup:
         self.cleaner()
 
 class LoggingCleanup:
+    logger = None
+
     def __init__(self, conn, environ):
         # N.B.:  do *not* create a cycle by holding on to 'environ'!
         self.conn = conn
         self.request_method = environ['REQUEST_METHOD']
         self.path_info = environ['PATH_INFO']
         self.query_string = environ.get('QUERY_STRING')
-        self.logger = environ.get('repoze.zodbconn.loadsave')
         self.loads_before, self.stores_before = conn.getTransferCounts()
 
     #############  WAAAAAAAAAAA!!!!!!########################################
@@ -27,7 +28,7 @@ class LoggingCleanup:
     def __del__(self): #pragma NO COVERAGE
         loads_after, stores_after = self.conn.getTransferCounts()
         self.conn.close()
-        if self.logger:
+        if self.logger is not None:
             if self.query_string:
                 url = '%s?%s' % (self.path_info, self.query_string)
             else:
