@@ -1,5 +1,5 @@
-Next release
-============
+0.9.1 (2009-06-12)
+==================
 
 - The ``EnvironmentDeleterMiddleware`` (the "closer") middleware did
   not delete the environment key if the application raised an
