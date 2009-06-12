@@ -160,6 +160,7 @@ class TestFileStorgeURIResolver(Base, unittest.TestCase):
 
     def test_invoke_factory_blobstorage(self):
         import os
+        from urllib import quote as q
         from ZODB.blob import BlobStorage
         from ZODB.FileStorage import FileStorage
         from zope.proxy import getProxiedObject
@@ -170,7 +171,7 @@ class TestFileStorgeURIResolver(Base, unittest.TestCase):
         k, args, kw, factory = resolver(
             'file://%s/db.db?quota=200'
             '&blobstorage_dir=%s/blob'
-            '&blobstorage_layout=bushy' % (self.tmpdir, self.tmpdir))
+            '&blobstorage_layout=bushy' % (self.tmpdir, q(self.tmpdir)))
         self.assertEqual(k,
                          (('%s/db.db' % self.tmpdir,),
                           (('blobstorage_dir', '%s/blob' % self.tmpdir),
@@ -199,6 +200,7 @@ class TestFileStorgeURIResolver(Base, unittest.TestCase):
 
     def test_invoke_factory_blobstorage_and_demostorage(self):
         import os
+        from urllib import quote as q
         from ZODB.blob import BlobStorage
         from ZODB.DemoStorage import DemoStorage
         from ZODB.FileStorage import FileStorage
@@ -210,7 +212,7 @@ class TestFileStorgeURIResolver(Base, unittest.TestCase):
         k, args, kw, factory = resolver(
             'file://%s/db.db?quota=200&demostorage=true'
             '&blobstorage_dir=%s/blob'
-            '&blobstorage_layout=bushy' % (self.tmpdir, self.tmpdir))
+            '&blobstorage_layout=bushy' % (self.tmpdir, q(self.tmpdir)))
         self.assertEqual(k,
                          (('%s/db.db' % self.tmpdir,),
                           (('blobstorage_dir', '%s/blob' % self.tmpdir),
