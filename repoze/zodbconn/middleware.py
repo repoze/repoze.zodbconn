@@ -11,10 +11,12 @@ class EnvironmentDeleterMiddleware:
         self.key = key
 
     def __call__(self, environ, start_response):
-        result = self.application(environ, start_response)
-        if self.key in environ:
-            del environ[self.key]
-        return result
+        try:
+            result = self.application(environ, start_response)
+            return result
+        finally:
+            if self.key in environ:
+                del environ[self.key]
 
 def make_middleware(app, global_conf, **local_conf):
     key = local_conf.get('key', CLOSER_KEY)

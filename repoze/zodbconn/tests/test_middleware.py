@@ -24,6 +24,14 @@ class TestEnvironmentDeleterMiddleware(unittest.TestCase):
         mw(environ, None)
         self.failIf('abc' in environ)
 
+    def test_exception_when_app_called(self):
+        app = DummyRaisingApplication()
+        mw = self._makeOne(app, 'abc')
+        environ = {'abc':'123'}
+        self.assertRaises(KeyError, mw, environ, None)
+        self.failIf('abc' in environ)
+
+
 class TestMakeMiddleware(unittest.TestCase):
     def _callFUT(self, *arg, **kw):
         from repoze.zodbconn.middleware import make_middleware
@@ -41,3 +49,8 @@ class DummyApplication:
     called = False
     def __call__(self, environ, start_response):
         self.called = True
+
+class DummyRaisingApplication:
+    def __call__(self, environ, start_response):
+        raise KeyError('foo')
+    
