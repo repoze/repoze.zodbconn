@@ -4,6 +4,10 @@ Next release
 - Added a ``zconfig`` URI parser, providing basic support for any
   kind of storage that ZODB can load via ZConfig.
 
+- Added a ``db_from_uri`` function, which is simpler to use than
+  ``dbfactory_from_uri``; ``db_from_uri`` also supports
+  multi-databases.  Replaced references in the documentation.
+
 0.9.1 (2009-06-12)
 ==================
 

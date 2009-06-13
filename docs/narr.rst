@@ -3,16 +3,16 @@ Resolving URIs
 
 You can retrieve databases using a URI syntax::
 
-  from repoze.zodbconn.finder import dbfactory_from_uri
-  factory = dbfactory_from_uri('zeo://localhost:9991?cache_size=25MB')
-  db = factory()
+  from repoze.zodbconn.finder import db_from_uri
+  db = db_from_uri('zeo://localhost:9991?cache_size=25MB')
 
-Currently only ``file://`` and ``zeo://`` URI schemes are recognized.
+The URI schemes currently recognized are ``file://``, ``zeo://``, and
+``zconfig://``.
 
 ``file://`` URI scheme
 ~~~~~~~~~~~~~~~~~~~~~~
 
-The ``file://`` URI scheme can be passed to ``dbfactory_from_uri`` to
+The ``file://`` URI scheme can be passed to ``db_from_uri`` to
 create a ZODB FileStorage database factory.  The path info section of
 this scheme should point at a filesystem file path that should contain
 the filestorage data.  For example::
@@ -81,14 +81,14 @@ An example that combines a path with a query string::
 ``zeo://`` URI scheme
 ~~~~~~~~~~~~~~~~~~~~~~
 
-The ``zeo://`` URI scheme can be passed to ``dbfactory_from_uri`` to
-create a ZODB ClientStorage database factory.  The path info section
-of this scheme should either point at a hostname/portnumber
-combination e.g.:
+The ``zeo://`` URI scheme can be passed to ``db_from_uri`` to
+create a ZODB ClientStorage database factory. Either the host and port
+parts of this scheme should point at a hostname/portnumber combination
+e.g.:
 
-  zeo:///localhost:7899
+  zeo://localhost:7899
 
-Or a UNIX socket name::
+Or the path part should point at a UNIX socket name::
 
   zeo:///path/to/zeo.sock
 
@@ -167,6 +167,75 @@ Example
 An example that combines a path with a query string::
 
   zeo://localhost:9001?connection_cache_size=20000
+
+``zconfig://`` URI scheme
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The ``zconfig://`` URI scheme can be passed to ``db_from_uri`` to
+create any kind of storage that ZODB can load via ZConfig. The path
+info section of this scheme should point at a ZConfig file on the
+filesystem. Use an optional fragment identifier to specify which
+database to open. This URI scheme does not use query string parameters.
+
+Examples
+++++++++
+
+An example ZConfig file::
+
+    <zodb>
+      <mappingstorage>
+      </mappingstorage>
+    </zodb>
+
+If that configuration file is located at /etc/myapp/zodb.conf, use the
+following URI to open the database::
+
+    zconfig:///etc/myapp/zodb.conf
+
+A ZConfig file can specify more thatn one database.  For example::
+
+    <zodb temp1>
+      <mappingstorage>
+      </mappingstorage>
+    </zodb>
+    <zodb temp2>
+      <mappingstorage>
+      </mappingstorage>
+    </zodb>
+
+In that case, use a URI with a fragment identifier::
+
+    zconfig:///etc/myapp/zodb.conf#temp1
+
+
+Multi-Database Support
+----------------------
+
+You can connect to multiple ZODB databases by providing a list of URIs,
+or a series of URIs separated by whitespace, when calling
+``db_from_uris``. Multi-databases allow you to apply different data
+management policies for different kinds of data; for example, you might
+store session data in a more volatile database.
+
+The first URI in the list specifies the root database. Each URI must
+have a distinct and explicit ``database_name``. The ``database_name``
+is used in all cross-database references, so do not change the
+``database_name`` once you have stored data, or you will break the
+references.
+
+An example multi-database application::
+
+   from repoze.zodbconn.finder import db_from_uris
+   uris = []
+   uris.append('zeo://localhost:9991/?database_name=main&storage=main')
+   uris.append('zeo://localhost:9991/?database_name=catalog&storage=catalog')
+   db = db_from_uris(uris)
+   conn = db.open()
+   root = conn.root()
+
+In this example, ``root`` is an object in the database named ``main``,
+since that ``main`` database is listed first in the URIs.
+
 
 Helper: Creating a Root Object
 ------------------------------
@@ -254,56 +323,6 @@ To use this cleanup, you need to do two things:
         return app
 
 
-
-Multi-Database Support
-----------------------
-
-You can connect to multiple ZODB databases by providing a list of URIs,
-or a series of URIs separated by whitespace, when creating the
-``PersistentApplicationFinder``. Multi-databases allow you to apply
-different data management policies for different kinds of data; for
-example, you might decide to put a catalog structure in a database with
-a large cache limit.
-
-The first URI in the list specifies the root database, meaning the
-database that contains the root object passed to the ``appmaker``
-callback. Each URI must have a distinct ``database_name``. The
-``database_name`` is used in all cross-database references, so do not
-change the ``database_name`` once you have stored data, or you will
-break the references.
-
-An example multi-database application::
-
-   def appmaker(root):
-       if not 'myapp' in root:
-           myapp = MyApp()
-           root['myapp'] = myapp
-
-           # put the catalog in the catalog database
-           catalog = MyCatalog()
-           catalog_conn = root._p_jar.get_connection('catalog')
-           catalog_conn.root()['catalog'] = catalog
-           catalog_conn.add(catalog)
-
-           # make a cross-database reference from myapp to the catalog
-           myapp.catalog = catalog
-
-           import transaction
-           transaction.commit()
-       return root['myapp']
-
-   from repoze.zodbconn.finder import PersistentApplicationFinder
-   uris = []
-   uris.append('zeo://localhost:9991/?database_name=main&storage=main')
-   uris.append('zeo://localhost:9991/?database_name=catalog&storage=catalog')
-   finder = PersistentApplicationFinder(uris, appmaker)
-   environ = {}
-   app = finder(environ)
-
-Application code does not need to do anything special to follow
-cross-database references. In the example above, other code can refer
-to ``myapp.catalog`` without knowing that a database boundary is being
-crossed.
 
 Middleware to Close a Connection
 --------------------------------

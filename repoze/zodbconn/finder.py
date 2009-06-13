@@ -41,33 +41,47 @@ class LoggingCleanup:
 class PersistentApplicationFinder:
     db = None
 
-    def __init__(self, uris, appmaker, cleanup=SimpleCleanup):
-        if isinstance(uris, basestring):
-            uris = uris.split()
-        self.uris = uris
+    def __init__(self, uri, appmaker, cleanup=SimpleCleanup):
+        self.uri = uri
         self.appmaker = appmaker
         self.cleanup = cleanup
 
     def __call__(self, environ):
         if self.db is None:
-            databases = {}
-            for uri in self.uris:
-                dbfactory = dbfactory_from_uri(uri)
-                db = dbfactory()
-                if db.database_name in databases:
-                    raise ValueError("database_name %r already in databases" %
-                        db.database_name)
-                # link the databases together
-                databases[db.database_name] = db
-                db.databases = databases
-                if self.db is None:
-                    # the first database in the list of URIs is the root
-                    self.db = db
+            self.db = db_from_uri(self.uri)
         conn = self.db.open()
         root = conn.root()
         app = self.appmaker(root)
         environ['repoze.zodbconn.closer'] = self.cleanup(conn, environ)
         return app
+
+
+def db_from_uri(uri):
+    """Create a database from a list of database URIs and return it.
+
+    uri can be either a whitespace-delimited string or a list of URIs
+    as strings.
+    """
+    if isinstance(uri, basestring):
+        uris = uri.strip().split()
+    else:
+        uris = uri
+    databases = {}
+    res = None
+    for uri in uris:
+        dbfactory = dbfactory_from_uri(uri)
+        db = dbfactory()
+        for name in db.databases:
+            if name in databases:
+                raise ValueError("database_name %r already in databases" %
+                    name)
+        # link the databases together
+        databases.update(db.databases)
+        db.databases = databases
+        if res is None:
+            # the first database in the list of URIs is the root
+            res = db
+    return res
 
 def dbfactory_from_uri(uri):
     (scheme, netloc, path, query, frag) = urlparse.urlsplit(uri)

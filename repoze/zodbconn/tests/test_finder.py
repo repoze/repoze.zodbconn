@@ -65,9 +65,6 @@ class TestPersistentApplicationFinder(unittest.TestCase):
         def dbfactory():
             return self.db
         RESOLVERS['foo'] = lambda *arg: ('key', 'arg', 'kw', dbfactory)
-        def addon_dbfactory():
-            return DummyDB(DummyRoot(), 'addon')
-        RESOLVERS['addon'] = lambda *arg: ('key', 'arg', 'kw', addon_dbfactory)
 
     def tearDown(self):
         from repoze.zodbconn.resolvers import RESOLVERS
@@ -88,7 +85,7 @@ class TestPersistentApplicationFinder(unittest.TestCase):
         def makeapp(root):
             pass
         finder = self._makeOne('foo://bar.baz', makeapp)
-        self.assertEqual(finder.uris, ['foo://bar.baz'])
+        self.assertEqual(finder.uri, 'foo://bar.baz')
         self.assertEqual(finder.appmaker, makeapp)
         self.failUnless(finder.cleanup is SimpleCleanup)
 
@@ -98,7 +95,7 @@ class TestPersistentApplicationFinder(unittest.TestCase):
         def cleanup(conn, environ):
             pass
         finder = self._makeOne('foo://bar.baz', makeapp, cleanup)
-        self.assertEqual(finder.uris, ['foo://bar.baz'])
+        self.assertEqual(finder.uri, 'foo://bar.baz')
         self.assertEqual(finder.appmaker, makeapp)
         self.failUnless(finder.cleanup is cleanup)
 
@@ -160,32 +157,52 @@ class TestPersistentApplicationFinder(unittest.TestCase):
         del environ['repoze.zodbconn.closer']
         self.assertEqual(self.root.closed, True)
 
-    def test_multiple_databases(self):
-        def makeapp(root):
-            root.made = True
-            return 'abc'
-        finder = self._makeOne('foo://bar.baz addon://', makeapp)
-        environ = {}
-        app = finder(environ)
-        self.assertEqual(app, 'abc')
-        self.assertEqual(self.root.made, True)
-        self.assertEqual(self.root.closed, False)
 
-        self.assertEqual(finder.db, self.db)
-        self.assertTrue('addon' in finder.db.databases)
-        self.assertTrue('foo' in finder.db.databases)
-        self.assertEqual(finder.db.databases,
-            finder.db.databases['addon'].databases)
+class TestDBFromURI(unittest.TestCase):
+    def setUp(self):
+        from repoze.zodbconn.resolvers import RESOLVERS
+        self.root = DummyRoot()
+        self.db = DummyDB(self.root, 'foo')
+        def dbfactory():
+            return self.db
+        RESOLVERS['foo'] = lambda *arg: ('key', 'arg', 'kw', dbfactory)
+        def addon_dbfactory():
+            return DummyDB(DummyRoot(), 'addon')
+        RESOLVERS['addon'] = lambda *arg: ('key', 'arg', 'kw', addon_dbfactory)
 
-        del environ['repoze.zodbconn.closer']
-        self.assertEqual(self.root.closed, True)
+    def tearDown(self):
+        from repoze.zodbconn.resolvers import RESOLVERS
+        del RESOLVERS['foo']
+        del RESOLVERS['addon']
+
+    def _callFUT(self, uri):
+        from repoze.zodbconn.finder import db_from_uri
+        return db_from_uri(uri)
+
+    def test_single_database(self):
+        db = self._callFUT('foo://bar.baz')
+        self.assertEqual(db.database_name, 'foo')
+
+    def test_multiple_databases_via_whitespace(self):
+        db = self._callFUT(' foo://bar.baz  addon:// ')
+        self.assertEqual(db.database_name, 'foo')
+        self.assertTrue('addon' in db.databases)
+        self.assertTrue('foo' in db.databases)
+        self.assertEqual(db.databases,
+            db.databases['addon'].databases)
+
+    def test_multiple_databases_via_list(self):
+        db = self._callFUT(['foo://bar.baz', 'addon://'])
+        self.assertEqual(db.database_name, 'foo')
+        self.assertTrue('addon' in db.databases)
+        self.assertTrue('foo' in db.databases)
+        self.assertEqual(db.databases,
+            db.databases['addon'].databases)
 
     def test_disallow_duplicate_database_name(self):
-        def makeapp(root):
-            return 'abc'
-        finder = self._makeOne('foo://bar.baz foo://bar.baz', makeapp)
-        environ = {}
-        self.assertRaises(ValueError, finder, environ)
+        self.assertRaises(
+            ValueError, self._callFUT, 'foo://bar.baz foo://bar.baz')
+
 
 class TestDBFactoryFromURI(unittest.TestCase):
     def setUp(self):
@@ -236,6 +253,7 @@ class DummyDB:
     def __init__(self, rootob, database_name):
         self.conn = DummyConn(rootob)
         self.database_name = database_name
+        self.databases = {database_name: self}
 
     def open(self):
         return self.conn
