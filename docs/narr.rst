@@ -3,7 +3,7 @@ Resolving URIs
 
 You can retrieve databases using a URI syntax::
 
-  from repoze.zodbconn.finder import db_from_uri
+  from repoze.zodbconn.uri import db_from_uri
   db = db_from_uri('zeo://localhost:9991?cache_size=25MB')
 
 The URI schemes currently recognized are ``file://``, ``zeo://``, and
@@ -225,7 +225,7 @@ references.
 
 An example multi-database application::
 
-   from repoze.zodbconn.finder import db_from_uris
+   from repoze.zodbconn.uri import db_from_uri
    uris = []
    uris.append('zeo://localhost:9991/?database_name=main&storage=main')
    uris.append('zeo://localhost:9991/?database_name=catalog&storage=catalog')
@@ -237,13 +237,57 @@ In this example, ``root`` is an object in the database named ``main``,
 since that ``main`` database is listed first in the URIs.
 
 
+Connecting to ZODB in a WSGI Pipeline
+-------------------------------------
+
+This package provides a WSGI framework component,
+``repoze.zodbconn#connector``, that opens a ZODB connection for
+downstream WSGI applications, and unconditionally closes the connection
+on the way out. The connection is normally stored in the WSGI
+environment under the key ``repoze.zodbconn.connection``.
+
+Here is a sample Paste Deploy configuration file that includes a
+ZODB connector::
+
+    [filter:zodbconn]
+    use = egg:repoze.zodbconn#connector
+    uri = zeo://localhost:9001
+
+    [pipeline:main]
+    pipeline =
+        zodbconn
+        egg:repoze.retry#retry
+        egg:repoze.tm2#tm
+        egg:myapp
+
+    [server:main]
+    use = egg:Paste#http
+    host = 0.0.0.0
+    port = 8080
+
+Note that the ZODB connector does not commit or abort transactions. You
+should use ``repoze.tm2`` or ``repoze.tm`` to manage transactions. The
+example above shows the recommended ordering of a ZODB connector,
+``repoze.retry``, and ``repoze.tm2`` in a pipeline.
+
+The parameters for the ZODB connector are:
+
+uri
+  The ZODB URI or URIs.  Separate URIs with whitespace.
+key
+  The key to put in the WSGI environment.  Defaults to
+  ``repoze.zodbconn.connection``.
+
+
 Helper: Creating a Root Object
 ------------------------------
 
 A higher-level API to using the ``repoze.zodbconn`` package allows you
 to create a "root factory".  You can use the
 ``PersistentApplicationFinder`` helper to create and find a root
-object in a ZODB for your application::
+object in a ZODB for your application.
+
+.. code-block:: python
 
    def appmaker(root):
        if not 'myapp' in root:
@@ -259,6 +303,16 @@ object in a ZODB for your application::
    app = finder(environ)
    # When environ dies, the ZODB connection is closed
    del environ
+
+If you use ``PersistentApplicationFinder`` in a WSGI pipeline that
+includes a ZODB connector (``repoze.zodbconn#connector``), you should
+provide an empty string as the URI when creating the
+``PersistentApplicationFinder``, causing it to use the connection
+already opened in the WSGI environment.  (If you specify the ZODB URI
+to ``PersistentApplicationFinder``, even when the WSGI environment
+already contains an open connection, the WSGI environment will be
+ignored and multiple connections will be opened.)
+
 
 Customizing Connection Cleanup
 ------------------------------
@@ -294,7 +348,8 @@ To use this cleanup, you need to do two things:
 - Arrange for an writable file-like object to be present in the WSGI
   environment under the key, ``repoze.zodbcon.loadsave``.
 
-- Pass the logging cleanup class to the PersistentAppFinder.  E.g.:
+- Pass the logging cleanup class to the
+  ``PersistentApplicationFinder``. E.g.:
 
 .. code-block:: python
 
@@ -322,20 +377,25 @@ To use this cleanup, you need to do two things:
         app = bfg_make_app(get_root, your.package, options=kw)
         return app
 
+**Do not** use the ``cleanup`` argument in a WSGI pipeline that includes a
+ZODB connector (``repoze.zodbconn#connector``). Instead, create WSGI
+framework components that use the open connection in the environment.
 
 
 Middleware to Close a Connection
 --------------------------------
 
-If you use the ``PersistentApplicationFinder`` class, it inserts a key
-in the environment which is a "closer".  When the environment is
-garbage collected, the closer will usually be called.  If you're
-having problems with this (the environment is not garbage collected,
-for some reason, for instance), you can use the "closer" middleware at
-the top of your pipeline::
+If you use the ``PersistentApplicationFinder`` class with a URI, it
+inserts a key in the environment which is a "closer". When the
+environment is garbage collected, the closer will usually be called. If
+you're having problems with this (the environment is not garbage
+collected, for some reason, for instance), you can use the "closer"
+middleware at the top of your pipeline::
 
   egg:repoze.zodbconn#closer
 
 This will cause the key to be deleted explicitly rather than relying
 on garbage collection.
 
+You should not need the closer middleware in a WSGI pipeline that
+includes a ZODB connector (``repoze.zodbconn#connector``).

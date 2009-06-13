@@ -99,6 +99,13 @@ class TestPersistentApplicationFinder(unittest.TestCase):
         self.assertEqual(finder.appmaker, makeapp)
         self.failUnless(finder.cleanup is cleanup)
 
+    def test_ctor_disallow_cleanup(self):
+        def makeapp(root):
+            pass
+        def cleanup(conn, environ):
+            pass
+        self.assertRaises(TypeError, self._makeOne, '', makeapp, cleanup)
+
     def test_call_no_db_no_cleanup(self):
         def makeapp(root):
             root.made = True
@@ -157,70 +164,19 @@ class TestPersistentApplicationFinder(unittest.TestCase):
         del environ['repoze.zodbconn.closer']
         self.assertEqual(self.root.closed, True)
 
-
-class TestDBFromURI(unittest.TestCase):
-    def setUp(self):
-        from repoze.zodbconn.resolvers import RESOLVERS
-        self.root = DummyRoot()
-        self.db = DummyDB(self.root, 'foo')
-        def dbfactory():
-            return self.db
-        RESOLVERS['foo'] = lambda *arg: ('key', 'arg', 'kw', dbfactory)
-        def addon_dbfactory():
-            return DummyDB(DummyRoot(), 'addon')
-        RESOLVERS['addon'] = lambda *arg: ('key', 'arg', 'kw', addon_dbfactory)
-
-    def tearDown(self):
-        from repoze.zodbconn.resolvers import RESOLVERS
-        del RESOLVERS['foo']
-        del RESOLVERS['addon']
-
-    def _callFUT(self, uri):
-        from repoze.zodbconn.finder import db_from_uri
-        return db_from_uri(uri)
-
-    def test_single_database(self):
-        db = self._callFUT('foo://bar.baz')
-        self.assertEqual(db.database_name, 'foo')
-
-    def test_multiple_databases_via_whitespace(self):
-        db = self._callFUT(' foo://bar.baz  addon:// ')
-        self.assertEqual(db.database_name, 'foo')
-        self.assertTrue('addon' in db.databases)
-        self.assertTrue('foo' in db.databases)
-        self.assertEqual(db.databases,
-            db.databases['addon'].databases)
-
-    def test_multiple_databases_via_list(self):
-        db = self._callFUT(['foo://bar.baz', 'addon://'])
-        self.assertEqual(db.database_name, 'foo')
-        self.assertTrue('addon' in db.databases)
-        self.assertTrue('foo' in db.databases)
-        self.assertEqual(db.databases,
-            db.databases['addon'].databases)
-
-    def test_disallow_duplicate_database_name(self):
-        self.assertRaises(
-            ValueError, self._callFUT, 'foo://bar.baz foo://bar.baz')
-
-
-class TestDBFactoryFromURI(unittest.TestCase):
-    def setUp(self):
-        from repoze.zodbconn.resolvers import RESOLVERS
-        RESOLVERS['foo'] = lambda *arg: ('key', 'arg', 'kw', 'factory')
-
-    def tearDown(self):
-        from repoze.zodbconn.resolvers import RESOLVERS
-        del RESOLVERS['foo']
-
-    def _getFUT(self):
-        from repoze.zodbconn.finder import dbfactory_from_uri
-        return dbfactory_from_uri
-
-    def test_it(self):
-        dbfactory_from_uri = self._getFUT()
-        self.assertEqual(dbfactory_from_uri('foo://abc'), 'factory')
-        self.assertRaises(ValueError, dbfactory_from_uri, 'bar://abc')
+    def test_call_no_uri(self):
+        def makeapp(root):
+            root.made = True
+            return 'abc'
+        finder = self._makeOne('', makeapp)
+        db = DummyDB(self.root, 'another')
+        conn = db.open()
+        environ = {'repoze.zodbconn.connection': conn}
+        app = finder(environ)
+        self.assertEqual(app, 'abc')
+        self.assertEqual(self.root.made, True)
+        self.assertEqual(self.root.closed, False)
+        self.assertFalse('repoze.zodbconn.closer' in environ)
 
 
 class DummyRoot:

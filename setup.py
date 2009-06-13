@@ -12,7 +12,7 @@
 #
 ##############################################################################
 
-__version__ = '0.9.2dev'
+__version__ = '0.10dev'
 
 import os
 
@@ -57,6 +57,7 @@ setup(name='repoze.zodbconn',
       entry_points = """\
       [paste.filter_app_factory]
       closer = repoze.zodbconn.middleware:make_middleware
+      connector = repoze.zodbconn.connector:make_app
       """
       )
 

@@ -1,5 +1,6 @@
-import urlparse
-from repoze.zodbconn.resolvers import RESOLVERS
+
+from repoze.zodbconn.uri import db_from_uri
+from repoze.zodbconn.connector import CONNECTION_KEY
 
 class SimpleCleanup:
     def __init__(self, conn, environ):
@@ -41,53 +42,33 @@ class LoggingCleanup:
 class PersistentApplicationFinder:
     db = None
 
-    def __init__(self, uri, appmaker, cleanup=SimpleCleanup):
+    def __init__(self, uri, appmaker, cleanup=None):
+        if uri:
+            if cleanup is None:
+                cleanup = SimpleCleanup
+        else:
+            # If the URI is empty, get the ZODB connection from the
+            # WSGI environment. In this mode, we must not use any
+            # cleanup function, because that would cause the ZODB
+            # connection to be closed twice, leading to nasty
+            # multithreading bugs. (The connection can be reopened by
+            # other threads immediately after close() is called.)
+            if cleanup:
+                raise TypeError(
+                    "cleanup must not be provided when URI is empty")
         self.uri = uri
         self.appmaker = appmaker
         self.cleanup = cleanup
 
     def __call__(self, environ):
-        if self.db is None:
-            self.db = db_from_uri(self.uri)
-        conn = self.db.open()
+        if self.uri:
+            if self.db is None:
+                self.db = db_from_uri(self.uri)
+            conn = self.db.open()
+        else:
+            conn = environ[CONNECTION_KEY]
         root = conn.root()
         app = self.appmaker(root)
-        environ['repoze.zodbconn.closer'] = self.cleanup(conn, environ)
+        if self.cleanup:
+            environ['repoze.zodbconn.closer'] = self.cleanup(conn, environ)
         return app
-
-
-def db_from_uri(uri):
-    """Create a database from a list of database URIs and return it.
-
-    uri can be either a whitespace-delimited string or a list of URIs
-    as strings.
-    """
-    if isinstance(uri, basestring):
-        uris = uri.strip().split()
-    else:
-        uris = uri
-    databases = {}
-    res = None
-    for uri in uris:
-        dbfactory = dbfactory_from_uri(uri)
-        db = dbfactory()
-        for name in db.databases:
-            if name in databases:
-                raise ValueError("database_name %r already in databases" %
-                    name)
-        # link the databases together
-        databases.update(db.databases)
-        db.databases = databases
-        if res is None:
-            # the first database in the list of URIs is the root
-            res = db
-    return res
-
-def dbfactory_from_uri(uri):
-    (scheme, netloc, path, query, frag) = urlparse.urlsplit(uri)
-    resolver =  RESOLVERS.get(scheme)
-    if resolver is None:
-        raise ValueError('Unresolveable URI %s' % uri)
-    _, _, _, dbfactory = resolver(uri)
-    return dbfactory
-
