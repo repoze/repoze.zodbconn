@@ -1,5 +1,6 @@
 import os
 import cgi
+from cStringIO import StringIO
 import urlparse
 
 from repoze.zodbconn.datatypes import byte_size
@@ -10,6 +11,7 @@ from ZODB.FileStorage.FileStorage import FileStorage
 from ZODB.DemoStorage import DemoStorage
 from ZODB.blob import BlobStorage
 from ZODB.DB import DB
+import ZConfig
 
 def interpret_int_args(argnames, kw):
     newkw = {}
@@ -187,7 +189,33 @@ def get_dbkw(kw):
     return dbkw
 
 
+class ZConfigURIResolver(object):
+
+    schema_xml_template = """
+    <schema>
+        <import package="ZODB"/>
+        <section type="ZODB.database" %s attribute="database"
+            required="yes" />
+    </schema>
+    """
+
+    def __call__(self, uri):
+        (scheme, netloc, path, query, frag) = urlparse.urlsplit(uri)
+         # urlparse doesnt understand file URLs and stuffs everything into path
+        (scheme, netloc, path, query, frag) = urlparse.urlsplit('http:' + path)
+        path = os.path.normpath(path)
+        if frag:
+            name_attr = 'name="%s"' % frag
+        else:
+            name_attr = ''
+        schema_xml = self.schema_xml_template % name_attr
+        schema = ZConfig.loadSchemaFile(StringIO(schema_xml))
+        config, handler = ZConfig.loadConfig(schema, path)
+        return (path, frag), (), {}, config.database.open
+
+
 RESOLVERS = {
     'zeo':ClientStorageURIResolver(),
     'file':FileStorageURIResolver(),
+    'zconfig':ZConfigURIResolver(),
     }

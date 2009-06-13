@@ -23,6 +23,7 @@ from setuptools import setup, find_packages
 
 requires = [
     'ZODB3 >= 3.8.1',
+    'ZConfig',
     ]
     
 here = os.path.abspath(os.path.dirname(__file__))

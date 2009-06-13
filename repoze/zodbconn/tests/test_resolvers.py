@@ -61,7 +61,7 @@ class Base:
         kwargs = f({'read_only':'false'})
         self.assertEqual(kwargs, {'read_only':0})
 
-class TestFileStorgeURIResolver(Base, unittest.TestCase):
+class TestFileStorageURIResolver(Base, unittest.TestCase):
 
     def _getTargetClass(self):
         from repoze.zodbconn.resolvers import FileStorageURIResolver
@@ -325,3 +325,48 @@ class TestClientStorageURIResolver(unittest.TestCase):
         self.assertEqual(k[2],
                          (('cache_size', 1), ('database_name', 'dbname'),
                           ('pool_size', 1)))
+
+
+class TestZConfigURIResolver(unittest.TestCase):
+    def _getTargetClass(self):
+        from repoze.zodbconn.resolvers import ZConfigURIResolver
+        return ZConfigURIResolver
+
+    def _makeOne(self):
+        klass = self._getTargetClass()
+        return klass()
+
+    def setUp(self):
+        import tempfile
+        self.tmp = tempfile.NamedTemporaryFile()
+
+    def tearDown(self):
+        self.tmp.close()
+
+    def test_named_database(self):
+        self.tmp.write("""
+        <zodb demodb>
+          <mappingstorage>
+          </mappingstorage>
+        </zodb>
+        """)
+        self.tmp.flush()
+        resolver = self._makeOne()
+        k, args, kw, factory = resolver('zconfig://%s#demodb' % self.tmp.name)
+        db = factory()
+        from ZODB.MappingStorage import MappingStorage
+        self.assertTrue(isinstance(db._storage, MappingStorage))
+
+    def test_anonymous_database(self):
+        self.tmp.write("""
+        <zodb>
+          <mappingstorage>
+          </mappingstorage>
+        </zodb>
+        """)
+        self.tmp.flush()
+        resolver = self._makeOne()
+        k, args, kw, factory = resolver('zconfig://%s' % self.tmp.name)
+        db = factory()
+        from ZODB.MappingStorage import MappingStorage
+        self.assertTrue(isinstance(db._storage, MappingStorage))
