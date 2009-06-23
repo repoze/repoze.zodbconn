@@ -447,3 +447,18 @@ An example pipeline that includes a cache cleanup component::
 
 The cache cleanup component requires a ZODB connection to exist in the
 environment.
+
+transferlog: Log ZODB loads and stores
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Use the ``transferlog`` component to identify URIs that cause ZODB to
+load or store a lot of objects. This component provides the same
+functionality as the ``LoggingCleanup`` class mentioned above, but it
+is compatible with the ``connector`` component
+(``repoze.zodbconn#connector``) and can be configured without writing
+code.  To include it in your pipeline, use this entry point::
+
+    egg:repoze.zodbconn#transferlog
+
+Provide a ``filename`` parameter that points to a writable log file.
+

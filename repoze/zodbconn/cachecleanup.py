@@ -69,8 +69,8 @@ def make_app(next_app, global_conf, **local_conf):
       to be kept in the cache.  Class names take the form
       "dotted_module_name:class_name".
 
-    key: Optional; the name of the key to put in the WSGI environment
-      containing the database connection.
+    key: Optional; the name of the key to get from the WSGI environment
+      to retrieve the database connection.
     """
     class_regexes = local_conf['class_regexes']
     key = local_conf.get('key', CONNECTION_KEY)

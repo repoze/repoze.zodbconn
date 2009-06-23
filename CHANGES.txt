@@ -8,9 +8,9 @@ Next release
   ``dbfactory_from_uri``; ``db_from_uri`` also supports
   multi-databases.  Replaced references in the documentation.
 
-- Added a WSGI framework component that connects to ZODB and
-  puts the connection in the WSGI environment.  It unconditionally
-  closes the ZODB connection on egress.
+- Added ``connector``, a WSGI framework component that connects to ZODB
+  and puts the connection in the WSGI environment. It unconditionally
+  closes the ZODB connection on exit.
 
 - ``PersistentApplicationFinder`` now gets the ZODB connection
   from the WSGI environment if the ZODB URI is empty.
@@ -18,9 +18,12 @@ Next release
 - Moved ``db_from_uri`` and ``dbfactory_from_uri`` to a module
   named ``uri``, to avoid circular imports.
 
-- Added a WSGI framework component that keeps only objects of
-  certain classes in the ZODB cache.  This helps control memory
-  consumption.
+- Added ``cachecleanup``, a WSGI framework component that keeps only
+  objects of certain classes in the ZODB cache. This helps control
+  memory consumption.
+
+- Added ``transferlog``, a WSGI framework component that logs
+  how many ZODB objects were loaded and stored per request.
 
 0.9.1 (2009-06-12)
 ==================

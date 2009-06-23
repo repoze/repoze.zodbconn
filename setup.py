@@ -59,6 +59,7 @@ setup(name='repoze.zodbconn',
       closer = repoze.zodbconn.middleware:make_middleware
       connector = repoze.zodbconn.connector:make_app
       cachecleanup = repoze.zodbconn.cachecleanup:make_app
+      transferlog = repoze.zodbconn.transferlog:make_app
       """
       )
 
