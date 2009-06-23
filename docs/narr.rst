@@ -192,7 +192,7 @@ following URI to open the database::
 
     zconfig:///etc/myapp/zodb.conf
 
-A ZConfig file can specify more thatn one database.  For example::
+A ZConfig file can specify more than one database.  For example::
 
     <zodb temp1>
       <mappingstorage>
@@ -382,8 +382,11 @@ ZODB connector (``repoze.zodbconn#connector``). Instead, create WSGI
 framework components that use the open connection in the environment.
 
 
-Middleware to Close a Connection
---------------------------------
+Other WSGI Framework Components
+-------------------------------
+
+closer: Close a Connection
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 If you use the ``PersistentApplicationFinder`` class with a URI, it
 inserts a key in the environment which is a "closer". When the
@@ -399,3 +402,48 @@ on garbage collection.
 
 You should not need the closer middleware in a WSGI pipeline that
 includes a ZODB connector (``repoze.zodbconn#connector``).
+
+cachecleanup: Control the Contents of the ZODB Cache
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This package includes a WSGI framework component that helps control the
+size of the ZODB cache (which often dominates ZODB application RAM
+consumption) by keeping only the state of certain objects in the cache.
+To include it in your pipeline, use this entry point::
+
+    egg:repoze.zodbconn#cachecleanup
+
+Next, use the ``class_regexes`` parameter to specify regular
+expressions that match the class names of objects you want to keep in
+the cache. Class names are composed of the class module name, a colon
+(``:``), and the class name. For example, the regular expression
+``BTrees`` matches objects of any class in the BTrees package, while
+``repoze.catalog.catalog:Catalog`` matches only Repoze Catalog objects.
+
+An example pipeline that includes a cache cleanup component::
+
+    [filter:zodbconn]
+    use = egg:repoze.zodbconn#connector
+    uri = zeo://localhost:9001
+
+    [filter:cachecleanup]
+    use = egg:repoze.zodbconn#cachecleanup
+    class_regexes = BTrees
+                    zope.index
+                    repoze.catalog
+
+    [pipeline:main]
+    pipeline =
+        zodbconn
+        cachecleanup
+        egg:repoze.retry#retry
+        egg:repoze.tm2#tm
+        egg:myapp
+
+    [server:main]
+    use = egg:Paste#http
+    host = 0.0.0.0
+    port = 8080
+
+The cache cleanup component requires a ZODB connection to exist in the
+environment.

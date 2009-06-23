@@ -58,6 +58,7 @@ setup(name='repoze.zodbconn',
       [paste.filter_app_factory]
       closer = repoze.zodbconn.middleware:make_middleware
       connector = repoze.zodbconn.connector:make_app
+      cachecleanup = repoze.zodbconn.cachecleanup:make_app
       """
       )
 

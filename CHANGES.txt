@@ -18,6 +18,9 @@ Next release
 - Moved ``db_from_uri`` and ``dbfactory_from_uri`` to a module
   named ``uri``, to avoid circular imports.
 
+- Added a WSGI framework component that keeps only objects of
+  certain classes in the ZODB cache.  This helps control memory
+  consumption.
 
 0.9.1 (2009-06-12)
 ==================
