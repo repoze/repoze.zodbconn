@@ -13,10 +13,10 @@ class TestConnector(unittest.TestCase):
         def dummy_app():
             pass
         db = DummyDB()
-        app = self._makeOne(dummy_app, db, key='altkey')
+        app = self._makeOne(dummy_app, db, connection_key='altkey')
         self.assertEqual(app.next_app, dummy_app)
         self.assertEqual(app.db, db)
-        self.assertEqual(app.key, 'altkey')
+        self.assertEqual(app.connection_key, 'altkey')
 
     def test_call(self):
         from repoze.zodbconn.connector import CONNECTION_KEY
@@ -78,10 +78,20 @@ class TestMakeApp(unittest.TestCase):
     def test_default(self):
         def dummy_app():
             pass
-        app = self._callFUT(dummy_app, {}, uri='foo://', key='altkey')
+        app = self._callFUT(dummy_app, {}, zodb_uri='foo://',
+            connection_key='altkey')
         self.assertEqual(app.next_app, dummy_app)
         self.assertEqual(app.db, self.db)
-        self.assertEqual(app.key, 'altkey')
+        self.assertEqual(app.connection_key, 'altkey')
+
+    def test_global_conf(self):
+        def dummy_app():
+            pass
+        app = self._callFUT(dummy_app, {'zodb_uri': 'foo://'},
+            connection_key='altkey')
+        self.assertEqual(app.next_app, dummy_app)
+        self.assertEqual(app.db, self.db)
+        self.assertEqual(app.connection_key, 'altkey')
 
 class DummyDB:
     def __init__(self):

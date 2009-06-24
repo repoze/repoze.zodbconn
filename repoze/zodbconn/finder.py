@@ -1,5 +1,6 @@
 
 from repoze.zodbconn.uri import db_from_uri
+from repoze.zodbconn.uri import dbfactory_from_uri  # BBB
 from repoze.zodbconn.connector import CONNECTION_KEY
 
 class SimpleCleanup:
@@ -42,33 +43,32 @@ class LoggingCleanup:
 class PersistentApplicationFinder:
     db = None
 
-    def __init__(self, uri, appmaker, cleanup=None):
-        if uri:
-            if cleanup is None:
-                cleanup = SimpleCleanup
-        else:
-            # If the URI is empty, get the ZODB connection from the
-            # WSGI environment. In this mode, we must not use any
-            # cleanup function, because that would cause the ZODB
-            # connection to be closed twice, leading to nasty
-            # multithreading bugs. (The connection can be reopened by
-            # other threads immediately after close() is called.)
-            if cleanup:
-                raise TypeError(
-                    "cleanup must not be provided when URI is empty")
+    def __init__(self, uri, appmaker, cleanup=SimpleCleanup,
+            connection_key=CONNECTION_KEY):
         self.uri = uri
         self.appmaker = appmaker
+        self.connection_key = connection_key
         self.cleanup = cleanup
 
     def __call__(self, environ):
-        if self.uri:
+        conn = None
+        if self.connection_key:
+            conn = environ.get(self.connection_key)
+
+        if conn is not None:
+            from_environ = True
+        else:
+            from_environ = False
             if self.db is None:
                 self.db = db_from_uri(self.uri)
             conn = self.db.open()
-        else:
-            conn = environ[CONNECTION_KEY]
+
         root = conn.root()
         app = self.appmaker(root)
-        if self.cleanup:
+
+        if not from_environ:
             environ['repoze.zodbconn.closer'] = self.cleanup(conn, environ)
+        # Otherwise, something else opened the connection and it
+        # has the responsibility to close it.
+
         return app

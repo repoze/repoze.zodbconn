@@ -249,13 +249,12 @@ environment under the key ``repoze.zodbconn.connection``.
 Here is a sample Paste Deploy configuration file that includes a
 ZODB connector::
 
-    [filter:zodbconn]
-    use = egg:repoze.zodbconn#connector
-    uri = zeo://localhost:9001
+    [DEFAULT]
+    zodb_uri = zeo://localhost:9001
 
     [pipeline:main]
     pipeline =
-        zodbconn
+        egg:repoze.zodbconn#connector
         egg:repoze.retry#retry
         egg:repoze.tm2#tm
         egg:myapp
@@ -272,9 +271,10 @@ example above shows the recommended ordering of a ZODB connector,
 
 The parameters for the ZODB connector are:
 
-uri
-  The ZODB URI or URIs.  Separate URIs with whitespace.
-key
+zodb_uri
+  The ZODB URI or URIs.  Separate URIs with whitespace.  This can be
+  either a local or global configuration parameter.
+connection_key
   The key to put in the WSGI environment.  Defaults to
   ``repoze.zodbconn.connection``.
 
@@ -304,14 +304,12 @@ object in a ZODB for your application.
    # When environ dies, the ZODB connection is closed
    del environ
 
-If you use ``PersistentApplicationFinder`` in a WSGI pipeline that
-includes a ZODB connector (``repoze.zodbconn#connector``), you should
-provide an empty string as the URI when creating the
-``PersistentApplicationFinder``, causing it to use the connection
-already opened in the WSGI environment.  (If you specify the ZODB URI
-to ``PersistentApplicationFinder``, even when the WSGI environment
-already contains an open connection, the WSGI environment will be
-ignored and multiple connections will be opened.)
+If a ZODB connection already exists in the environment passed to
+``PersistentApplicationFinder``, that ZODB connection will be used
+instead of opening a new connection.  If you want to prevent
+``PersistentApplicationFinder`` from getting the connection from the
+environment, add the parameter ``connection_key=None`` when
+creating the finder.
 
 
 Customizing Connection Cleanup
@@ -334,6 +332,13 @@ stored in the WSGI environment:
   method;  typically, this means that the returned object holds a reference
   to the connection or to its ``close`` method.  The ``__del__`` method
   **may** perform other work, but **must not** raise any exception.
+
+**Note**: The ``cleanup`` parameter will be **ignored** when
+``PersistentApplicationFinder`` gets its connection from the
+environment, so don't use the ``cleanup`` parameter in a WSGI pipeline
+that includes a ZODB connector (``repoze.zodbconn#connector``).
+Instead, create WSGI framework components that use the open connection
+in the environment.
 
 The default cleanup implementation, ``repoze.zodbcon.finder:SimpleCleanup``,
 just closes the connection.  An alternate cleanup implementation,
@@ -377,10 +382,6 @@ To use this cleanup, you need to do two things:
         app = bfg_make_app(get_root, your.package, options=kw)
         return app
 
-**Do not** use the ``cleanup`` argument in a WSGI pipeline that includes a
-ZODB connector (``repoze.zodbconn#connector``). Instead, create WSGI
-framework components that use the open connection in the environment.
-
 
 Other WSGI Framework Components
 -------------------------------
@@ -388,20 +389,20 @@ Other WSGI Framework Components
 closer: Close a Connection
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-If you use the ``PersistentApplicationFinder`` class with a URI, it
-inserts a key in the environment which is a "closer". When the
-environment is garbage collected, the closer will usually be called. If
-you're having problems with this (the environment is not garbage
-collected, for some reason, for instance), you can use the "closer"
-middleware at the top of your pipeline::
+If you use the ``PersistentApplicationFinder`` class without a ZODB
+connector in the pipeline, the finder inserts a key in the environment
+which is a "closer". When the environment is garbage collected, the
+closer will usually be called. If you're having problems with this (the
+environment is not garbage collected, for some reason, for instance),
+you can use the "closer" middleware at the top of your pipeline::
 
   egg:repoze.zodbconn#closer
 
-This will cause the key to be deleted explicitly rather than relying
-on garbage collection.
+This will cause the key to be deleted explicitly rather than relying on
+garbage collection.
 
-You should not need the closer middleware in a WSGI pipeline that
-includes a ZODB connector (``repoze.zodbconn#connector``).
+You should not need the closer middleware in a WSGI pipeline that uses
+a ZODB connector (``repoze.zodbconn#connector``).
 
 cachecleanup: Control the Contents of the ZODB Cache
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -422,9 +423,8 @@ the cache. Class names are composed of the class module name, a colon
 
 An example pipeline that includes a cache cleanup component::
 
-    [filter:zodbconn]
-    use = egg:repoze.zodbconn#connector
-    uri = zeo://localhost:9001
+    [DEFAULT]
+    zodb_uri = zeo://localhost:9001
 
     [filter:cachecleanup]
     use = egg:repoze.zodbconn#cachecleanup
@@ -434,7 +434,7 @@ An example pipeline that includes a cache cleanup component::
 
     [pipeline:main]
     pipeline =
-        zodbconn
+        egg:repoze.zodbconn#connector
         cachecleanup
         egg:repoze.retry#retry
         egg:repoze.tm2#tm

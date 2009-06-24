@@ -40,7 +40,7 @@ class TestCacheCleanup(unittest.TestCase):
             self.assertEqual(root['keepme']['extra']._p_changed, False)
 
         regexes = 'repoze.zodbconn.tests.test_cachecleanup:KeepMe'
-        cleaner = CacheCleanup(myapp, regexes, key=connection_key)
+        cleaner = CacheCleanup(myapp, regexes, connection_key=connection_key)
 
         # run this test twice to test class caching
         for i in range(2):
@@ -62,7 +62,7 @@ class TestMakeApp(unittest.TestCase):
         def dummy_app():
             pass
         app = self._callFUT(dummy_app, {}, class_regexes='repoze zope',
-            key='altkey')
+            connection_key='altkey')
         self.assertEqual(app.next_app, dummy_app)
         self.assertEqual(len(app.class_regexes), 2)
         self.assertEqual(app.connection_key, 'altkey')

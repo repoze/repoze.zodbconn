@@ -4,10 +4,10 @@ from repoze.zodbconn.connector import CONNECTION_KEY
 class TransferLog:
     """WSGI framework component that logs ZODB transfer stats to a file."""
 
-    def __init__(self, next_app, logger, key=CONNECTION_KEY):
+    def __init__(self, next_app, logger, connection_key=CONNECTION_KEY):
         self.next_app = next_app
         self.logger = logger
-        self.connection_key = key
+        self.connection_key = connection_key
 
     def __call__(self, environ, start_response):
         conn = environ[self.connection_key]
@@ -35,10 +35,10 @@ def make_app(next_app, global_conf, **local_conf):
       to be kept in the cache.  Class names take the form
       "dotted_module_name:class_name".
 
-    key: Optional; the name of the key to get from the WSGI environment
-      to retrieve the database connection.
+    connection_key: Optional; the name of the key to get from the WSGI
+        environment to retrieve the database connection.
     """
     filename = local_conf['filename']
-    logger = open(filename, 'a')
-    key = local_conf.get('key', CONNECTION_KEY)
-    return TransferLog(next_app, logger, key=key)
+    logger = open(filename, 'a', False)
+    connection_key = local_conf.get('connection_key', CONNECTION_KEY)
+    return TransferLog(next_app, logger, connection_key=connection_key)

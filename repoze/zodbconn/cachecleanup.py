@@ -9,9 +9,9 @@ class CacheCleanup:
     Keeps only objects of certain classes.
     """
 
-    def __init__(self, next_app, class_regexes, key=CONNECTION_KEY):
+    def __init__(self, next_app, class_regexes, connection_key=CONNECTION_KEY):
         self.next_app = next_app
-        self.connection_key = key
+        self.connection_key = connection_key
         if isinstance(class_regexes, basestring):
             class_regexes = [re.compile(expr) for expr in class_regexes.split()]
         self.class_regexes = class_regexes
@@ -69,9 +69,9 @@ def make_app(next_app, global_conf, **local_conf):
       to be kept in the cache.  Class names take the form
       "dotted_module_name:class_name".
 
-    key: Optional; the name of the key to get from the WSGI environment
-      to retrieve the database connection.
+    connection_key: Optional; the name of the key to get from the WSGI
+        environment to retrieve the database connection.
     """
     class_regexes = local_conf['class_regexes']
-    key = local_conf.get('key', CONNECTION_KEY)
-    return CacheCleanup(next_app, class_regexes, key=key)
+    connection_key = local_conf.get('connection_key', CONNECTION_KEY)
+    return CacheCleanup(next_app, class_regexes, connection_key=connection_key)

@@ -50,7 +50,8 @@ class TestMakeApp(unittest.TestCase):
             pass
         import tempfile
         f = tempfile.NamedTemporaryFile()
-        app = self._callFUT(dummy_app, {}, filename=f.name, key='altkey')
+        app = self._callFUT(dummy_app, {}, filename=f.name,
+            connection_key='altkey')
         self.assertEqual(app.next_app, dummy_app)
         self.assertEqual(app.logger.name, f.name)
         self.assertEqual(app.connection_key, 'altkey')

@@ -74,13 +74,11 @@ class TestPersistentApplicationFinder(unittest.TestCase):
         from repoze.zodbconn.finder import PersistentApplicationFinder
         return PersistentApplicationFinder
 
-    def _makeOne(self, uri, appmaker, cleanup=_marker):
+    def _makeOne(self, uri, appmaker, **kw):
         klass = self._getTargetClass()
-        if cleanup is _marker:
-            return klass(uri, appmaker)
-        return klass(uri, appmaker, cleanup)
+        return klass(uri, appmaker, **kw)
 
-    def test_ctor_no_cleanup(self):
+    def test_ctor(self):
         from repoze.zodbconn.finder import SimpleCleanup
         def makeapp(root):
             pass
@@ -88,23 +86,6 @@ class TestPersistentApplicationFinder(unittest.TestCase):
         self.assertEqual(finder.uri, 'foo://bar.baz')
         self.assertEqual(finder.appmaker, makeapp)
         self.failUnless(finder.cleanup is SimpleCleanup)
-
-    def test_ctor_w_cleanup(self):
-        def makeapp(root):
-            pass
-        def cleanup(conn, environ):
-            pass
-        finder = self._makeOne('foo://bar.baz', makeapp, cleanup)
-        self.assertEqual(finder.uri, 'foo://bar.baz')
-        self.assertEqual(finder.appmaker, makeapp)
-        self.failUnless(finder.cleanup is cleanup)
-
-    def test_ctor_disallow_cleanup(self):
-        def makeapp(root):
-            pass
-        def cleanup(conn, environ):
-            pass
-        self.assertRaises(TypeError, self._makeOne, '', makeapp, cleanup)
 
     def test_call_no_db_no_cleanup(self):
         def makeapp(root):
@@ -124,7 +105,7 @@ class TestPersistentApplicationFinder(unittest.TestCase):
         def makeapp(root):
             root.made = True
             return 'abc'
-        finder = self._makeOne('foo://bar.baz', makeapp, DummyCleanup)
+        finder = self._makeOne('foo://bar.baz', makeapp, cleanup=DummyCleanup)
         environ = {}
         app = finder(environ)
         self.assertEqual(app, 'abc')
@@ -153,7 +134,8 @@ class TestPersistentApplicationFinder(unittest.TestCase):
         def makeapp(root):
             root.made = True
             return 'abc'
-        finder = self._makeOne('another://bar.baz', makeapp, DummyCleanup)
+        finder = self._makeOne('another://bar.baz', makeapp,
+            cleanup=DummyCleanup)
         finder.db = DummyDB(self.root, 'another')
         environ = {}
         app = finder(environ)
@@ -163,6 +145,34 @@ class TestPersistentApplicationFinder(unittest.TestCase):
         self.assertEqual(environ['XXX'], None)
         del environ['repoze.zodbconn.closer']
         self.assertEqual(self.root.closed, True)
+
+    def test_get_connection_from_environ(self):
+        def makeapp(root):
+            root.made = True
+            return 'abc'
+        finder = self._makeOne('foo://bar.baz', makeapp)
+        db = DummyDB(self.root, 'another')
+        conn = db.open()
+        environ = {'repoze.zodbconn.connection': conn}
+        app = finder(environ)
+        self.assertEqual(app, 'abc')
+        self.assertEqual(self.root.made, True)
+        self.assertEqual(self.root.closed, False)
+        self.assertFalse('repoze.zodbconn.closer' in environ)
+
+    def test_ignore_connection_from_environ(self):
+        def makeapp(root):
+            root.made = True
+            return 'abc'
+        finder = self._makeOne('foo://bar.baz', makeapp, connection_key=None)
+        db = DummyDB(self.root, 'another')
+        conn = db.open()
+        environ = {'repoze.zodbconn.connection': conn}
+        app = finder(environ)
+        self.assertEqual(app, 'abc')
+        self.assertEqual(self.root.made, True)
+        self.assertEqual(self.root.closed, False)
+        self.assertTrue('repoze.zodbconn.closer' in environ)
 
     def test_call_no_uri(self):
         def makeapp(root):

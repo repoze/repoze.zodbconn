@@ -13,7 +13,7 @@ Next release
   closes the ZODB connection on exit.
 
 - ``PersistentApplicationFinder`` now gets the ZODB connection
-  from the WSGI environment if the ZODB URI is empty.
+  from the WSGI environment whenever it is provided.
 
 - Moved ``db_from_uri`` and ``dbfactory_from_uri`` to a module
   named ``uri``, to avoid circular imports.
