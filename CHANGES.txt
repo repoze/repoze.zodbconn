@@ -1,5 +1,5 @@
-Next release
-============
+0.10 (2009-06-24)
+=================
 
 - Added a ``zconfig`` URI parser, providing basic support for any
   kind of storage that ZODB can load via ZConfig.
