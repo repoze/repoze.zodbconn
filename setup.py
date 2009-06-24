@@ -22,17 +22,18 @@ use_setuptools()
 from setuptools import setup, find_packages
 
 requires = [
+    'setuptools',
     'ZODB3 >= 3.8.1',
     'ZConfig',
     ]
-    
+
 here = os.path.abspath(os.path.dirname(__file__))
 README = open(os.path.join(here, 'README.txt')).read()
 CHANGES = open(os.path.join(here, 'CHANGES.txt')).read()
 
 setup(name='repoze.zodbconn',
       version=__version__,
-      description=('Makes it possible to construct ZODB databases from URIs'),
+      description=('Opens ZODB by URI and provides ZODB-related WSGI apps'),
       long_description=README + '\n\n' + CHANGES,
       classifiers=[
         "Development Status :: 3 - Alpha",
