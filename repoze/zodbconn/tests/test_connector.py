@@ -99,8 +99,14 @@ class DummyDB:
     def open(self):
         return DummyConnection()
 
+class DummyTransactionManager:
+    def abort(self):
+        pass
+
 class DummyConnection:
     closed = False
 
     def close(self):
         self.closed = True
+
+    transaction_manager = DummyTransactionManager()

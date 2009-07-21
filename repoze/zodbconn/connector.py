@@ -23,6 +23,7 @@ class Connector:
         finally:
             if self.connection_key in environ:
                 del environ[self.connection_key]
+            conn.transaction_manager.abort()
             conn.close()
 
 def make_app(next_app, global_conf, **local_conf):

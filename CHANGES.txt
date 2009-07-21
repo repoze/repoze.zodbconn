@@ -1,7 +1,9 @@
 Next Release
 ============
 
-- ...
+- In the connector middleware, abort the transaction before closing
+  the connection, to avoid an exception that would lead to leaked
+  connections.
 
 0.10 (2009-06-24)
 =================
