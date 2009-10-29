@@ -194,8 +194,7 @@ class ZConfigURIResolver(object):
     schema_xml_template = """
     <schema>
         <import package="ZODB"/>
-        <section type="ZODB.database" %s attribute="database"
-            required="yes" />
+        <multisection type="ZODB.database" attribute="databases" />
     </schema>
     """
 
@@ -204,14 +203,19 @@ class ZConfigURIResolver(object):
          # urlparse doesnt understand file URLs and stuffs everything into path
         (scheme, netloc, path, query, frag) = urlparse.urlsplit('http:' + path)
         path = os.path.normpath(path)
-        if frag:
-            name_attr = 'name="%s"' % frag
-        else:
-            name_attr = ''
-        schema_xml = self.schema_xml_template % name_attr
+        schema_xml = self.schema_xml_template
         schema = ZConfig.loadSchemaFile(StringIO(schema_xml))
         config, handler = ZConfig.loadConfig(schema, path)
-        return (path, frag), (), {}, config.database.open
+        for database in config.databases:
+            if not frag:
+                # use the first defined in the file
+                break
+            elif frag == database.name:
+                # match found
+                break
+        else:
+            raise KeyError("No database named %s found" % frag)
+        return (path, frag), (), {}, database.open
 
 
 RESOLVERS = {

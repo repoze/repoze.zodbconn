@@ -5,6 +5,9 @@ Next Release
   the connection, to avoid an exception that would lead to leaked
   connections.
 
+- The ZConfig file parser now allows a config file to define multiple
+  databases.
+
 0.10 (2009-06-24)
 =================
 

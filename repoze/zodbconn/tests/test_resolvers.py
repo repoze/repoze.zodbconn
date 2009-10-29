@@ -345,6 +345,11 @@ class TestZConfigURIResolver(unittest.TestCase):
 
     def test_named_database(self):
         self.tmp.write("""
+        <zodb otherdb>
+          <demostorage>
+          </demostorage>
+        </zodb>
+
         <zodb demodb>
           <mappingstorage>
           </mappingstorage>
@@ -363,6 +368,11 @@ class TestZConfigURIResolver(unittest.TestCase):
           <mappingstorage>
           </mappingstorage>
         </zodb>
+
+        <zodb demodb>
+          <mappingstorage>
+          </mappingstorage>
+        </zodb>
         """)
         self.tmp.flush()
         resolver = self._makeOne()
@@ -370,3 +380,14 @@ class TestZConfigURIResolver(unittest.TestCase):
         db = factory()
         from ZODB.MappingStorage import MappingStorage
         self.assertTrue(isinstance(db._storage, MappingStorage))
+
+    def test_database_not_found(self):
+        self.tmp.write("""
+        <zodb x>
+          <mappingstorage>
+          </mappingstorage>
+        </zodb>
+        """)
+        self.tmp.flush()
+        resolver = self._makeOne()
+        self.assertRaises(KeyError, resolver, 'zconfig://%s#y' % self.tmp.name)
