@@ -80,8 +80,7 @@ class TestPersistentApplicationFinder(unittest.TestCase):
 
     def test_ctor(self):
         from repoze.zodbconn.finder import SimpleCleanup
-        def makeapp(root):
-            pass
+        def makeapp(root): pass
         finder = self._makeOne('foo://bar.baz', makeapp)
         self.assertEqual(finder.uri, 'foo://bar.baz')
         self.assertEqual(finder.appmaker, makeapp)

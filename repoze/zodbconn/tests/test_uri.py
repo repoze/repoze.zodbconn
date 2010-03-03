@@ -72,20 +72,11 @@ class DummyDB:
         self.database_name = database_name
         self.databases = {database_name: self}
 
-    def open(self):
-        return self.conn
-
 class DummyConn:
     closed = False
 
     def __init__(self, rootob):
         self.rootob = rootob
-
-    def root(self):
-        return self.rootob
-
-    def close(self):
-        self.rootob.closed = True
 
 class DummyRoot:
     pass

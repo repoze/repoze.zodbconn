@@ -46,8 +46,7 @@ class TestMakeApp(unittest.TestCase):
         return make_app(next_app, global_conf, **local_conf)
 
     def test_it(self):
-        def dummy_app():
-            pass
+        def dummy_app(): pass
         import tempfile
         f = tempfile.NamedTemporaryFile()
         app = self._callFUT(dummy_app, {}, filename=f.name,

@@ -10,8 +10,7 @@ class TestConnector(unittest.TestCase):
         return klass(next_app, db, **kwargs)
 
     def test_ctor(self):
-        def dummy_app():
-            pass
+        def dummy_app(): pass
         db = DummyDB()
         app = self._makeOne(dummy_app, db, connection_key='altkey')
         self.assertEqual(app.next_app, dummy_app)
@@ -76,8 +75,7 @@ class TestMakeApp(unittest.TestCase):
         return make_app(next_app, global_conf, **local_conf)
 
     def test_default(self):
-        def dummy_app():
-            pass
+        def dummy_app(): pass
         app = self._callFUT(dummy_app, {}, zodb_uri='foo://',
             connection_key='altkey')
         self.assertEqual(app.next_app, dummy_app)
@@ -85,8 +83,7 @@ class TestMakeApp(unittest.TestCase):
         self.assertEqual(app.connection_key, 'altkey')
 
     def test_global_conf(self):
-        def dummy_app():
-            pass
+        def dummy_app(): pass
         app = self._callFUT(dummy_app, {'zodb_uri': 'foo://'},
             connection_key='altkey')
         self.assertEqual(app.next_app, dummy_app)

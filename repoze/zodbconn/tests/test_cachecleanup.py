@@ -59,8 +59,7 @@ class TestMakeApp(unittest.TestCase):
         return make_app(next_app, global_conf, **local_conf)
 
     def test_default(self):
-        def dummy_app():
-            pass
+        def dummy_app(): pass
         app = self._callFUT(dummy_app, {}, class_regexes='repoze zope',
             connection_key='altkey')
         self.assertEqual(app.next_app, dummy_app)
