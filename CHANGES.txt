@@ -1,6 +1,10 @@
 Next Release
 ============
 
+- Made the URI resolver compatible with changes to Python's ``urlparse``
+  module in Python 2.6.5 (tests all pass now on Python 2.4.6, 2.5.5,
+  and 2.6.5).  Thanks to Fergus Doyle for the patch.
+
 - In the connector middleware, abort the transaction before closing
   the connection, to avoid an exception that would lead to leaked
   connections.

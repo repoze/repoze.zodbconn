@@ -134,9 +134,9 @@ class ClientStorageURIResolver(Resolver):
     _bytesize_args = ('cache_size', )
 
     def __call__(self, uri):
+        # urlparse doesnt understand zeo URLs so force to something that doesn't break
+        uri = uri.replace('zeo://', 'http://', 1)
         (scheme, netloc, path, query, frag) = urlparse.urlsplit(uri)
-         # urlparse doesnt understand zeo URLs and stuffs everything into path
-        (scheme, netloc, path, query, frag) = urlparse.urlsplit('http:' + path)
         if netloc:
             # TCP URL
             if ':' in netloc:
