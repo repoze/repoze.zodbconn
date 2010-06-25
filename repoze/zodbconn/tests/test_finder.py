@@ -119,7 +119,7 @@ class TestPersistentApplicationFinder(unittest.TestCase):
         def makeapp(root):
             root.made = True
             return 'abc'
-        finder = self._makeOne('another://bar.baz', makeapp)
+        finder = self._makeOne(None, makeapp)
         finder.db = DummyDB(self.root, 'another')
         environ = {}
         app = finder(environ)
@@ -133,8 +133,7 @@ class TestPersistentApplicationFinder(unittest.TestCase):
         def makeapp(root):
             root.made = True
             return 'abc'
-        finder = self._makeOne('another://bar.baz', makeapp,
-            cleanup=DummyCleanup)
+        finder = self._makeOne(None, makeapp, cleanup=DummyCleanup)
         finder.db = DummyDB(self.root, 'another')
         environ = {}
         app = finder(environ)

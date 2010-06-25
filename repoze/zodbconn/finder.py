@@ -41,34 +41,30 @@ class LoggingCleanup:
                                 % (self.request_method, url, loads, stores))
 
 class PersistentApplicationFinder:
-    db = None
-
     def __init__(self, uri, appmaker, cleanup=SimpleCleanup,
             connection_key=CONNECTION_KEY):
         self.uri = uri
         self.appmaker = appmaker
         self.connection_key = connection_key
         self.cleanup = cleanup
+        if uri is None: # it will be None during *tests* only
+            self.db = None
+        else:
+            self.db = db_from_uri(self.uri)
 
     def __call__(self, environ):
         conn = None
+
         if self.connection_key:
             conn = environ.get(self.connection_key)
 
-        if conn is not None:
-            from_environ = True
-        else:
-            from_environ = False
-            if self.db is None:
-                self.db = db_from_uri(self.uri)
+        if conn is None:
             conn = self.db.open()
+            # We opened this connection, which means we have the
+            # responsibility for closing it.
+            environ['repoze.zodbconn.closer'] = self.cleanup(conn, environ)
 
         root = conn.root()
         app = self.appmaker(root)
-
-        if not from_environ:
-            environ['repoze.zodbconn.closer'] = self.cleanup(conn, environ)
-        # Otherwise, something else opened the connection and it
-        # has the responsibility to close it.
 
         return app
