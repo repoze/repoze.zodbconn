@@ -1,5 +1,5 @@
-Next release
-============
+0.12 (2010-06-25)
+=================
 
 - PersistentApplicationFinder: More eagerly open the database at
   startup time in order to avoid race condition where many

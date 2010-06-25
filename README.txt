@@ -2,9 +2,10 @@
  repoze.zodbconn
 =================
 
-Library which allows ZODB databases to be constructed from URI
-specifications.
+A lbrary which allows `ZODB <http://zodb.org>`_ databases to be
+constructed from URI specifications.
 
-See the docs directory for more information.
+Read the latest documentation at `http://docs.repoze.org/zodbconn/
+<http://docs.repoze.org/zodbconn/>`_.
 
 
