@@ -13,7 +13,7 @@ class SimpleCleanup:
     def __del__(self):
         self.cleaner()
         if self.connection_key in environ:
-            del environ[self.connection_key[
+            del environ[self.connection_key]
 
 class LoggingCleanup:
     logger = None
