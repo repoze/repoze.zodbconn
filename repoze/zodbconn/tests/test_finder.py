@@ -6,25 +6,16 @@ class TestSimpleCleanup(unittest.TestCase):
         from repoze.zodbconn.finder import SimpleCleanup
         return SimpleCleanup
 
-    def _makeOne(self, cleaner, environ, connection_key):
-        return self._getTargetClass()(cleaner, environ, connection_key)
+    def _makeOne(self, cleaner, environ):
+        return self._getTargetClass()(cleaner, environ)
 
     def test___del___calls_cleaner(self):
         root = DummyRoot()
         conn = DummyConn(root)
         environ = {}
-        cleanup = self._makeOne(conn, environ, None)
+        cleanup = self._makeOne(conn, environ)
         del cleanup
         self.failUnless(root.closed)
-
-    def tests__del__cleans_environ(self):
-        root = DummyRoot()
-        conn = DummyConn(root)
-        environ = {"connection": None}
-        cleanup = self._makeOne(conn, environ, "connection")
-        del cleanup
-        self.assertTrue("connection" not in environ)
-
 
 class TestLoggingCleanup(unittest.TestCase):
 
@@ -216,7 +207,7 @@ class DummyConn:
         return self._loads, self._saves
 
 class DummyCleanup:
-    def __init__(self, conn, environ, connection_key):
+    def __init__(self, conn, environ):
         self.conn = conn
         environ['XXX'] = None
     def __del__(self):

@@ -4,16 +4,12 @@ from repoze.zodbconn.uri import dbfactory_from_uri  # BBB
 from repoze.zodbconn.connector import CONNECTION_KEY
 
 class SimpleCleanup:
-    def __init__(self, conn, environ, connection_key):
+    def __init__(self, conn, environ):
         # N.B.:  do *not* create a cycle by holding on to 'environ'!
         self.cleaner = conn.close
-        self.environ = environ
-        self.connection_key = connection_key
 
     def __del__(self):
         self.cleaner()
-        if self.connection_key in self.environ:
-            del self.environ[self.connection_key]
 
 class LoggingCleanup:
     logger = None
@@ -63,10 +59,10 @@ class PersistentApplicationFinder:
             conn = environ.get(self.connection_key)
 
         if conn is None:
-            conn = environ[self.connection_key] = self.db.open()
+            conn = self.db.open()
             # We opened this connection, which means we have the
             # responsibility for closing it.
-            environ['repoze.zodbconn.closer'] = self.cleanup(conn, environ, self.connection_key)
+            environ['repoze.zodbconn.closer'] = self.cleanup(conn, environ)
 
         root = conn.root()
         app = self.appmaker(root)
