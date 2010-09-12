@@ -1,3 +1,11 @@
+?.?? - Unreleased
+=================
+
+- PersistentApplicationFinder: Store new connections in the environ
+  and remove them when cleaning. This is needed when the finder
+  is called multiple times.
+
+
 0.12 (2010-06-25)
 =================
 
