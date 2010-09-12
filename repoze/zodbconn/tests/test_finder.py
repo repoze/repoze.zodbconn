@@ -216,7 +216,7 @@ class DummyConn:
         return self._loads, self._saves
 
 class DummyCleanup:
-    def __init__(self, conn, environ):
+    def __init__(self, conn, environ, connection_key):
         self.conn = conn
         environ['XXX'] = None
     def __del__(self):
