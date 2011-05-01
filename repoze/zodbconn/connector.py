@@ -18,8 +18,8 @@ class Connector:
         conn = self.db.open()
         environ[self.connection_key] = conn
         try:
-            result = self.next_app(environ, start_response)
-            return result
+            for chunk in self.next_app(environ, start_response):
+                yield chunk
         finally:
             if self.connection_key in environ:
                 del environ[self.connection_key]
