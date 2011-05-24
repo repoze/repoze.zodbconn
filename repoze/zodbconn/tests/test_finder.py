@@ -107,10 +107,10 @@ class TestPersistentApplicationFinder(_Base):
         environ = {}
         app = finder(environ)
         self.assertEqual(app, 'abc')
-        self.assertEqual(self.root.made, True)
-        self.assertEqual(self.root.closed, False)
+        self.failUnless(self.root.made)
+        self.failIf(self.root.closed)
         del environ[CLOSER_KEY]
-        self.assertEqual(self.root.closed, True)
+        self.failUnless(self.root.closed)
         self.assertEqual(finder.db, self.db)
 
     def test_call_no_db_w_cleanup(self):
@@ -122,11 +122,11 @@ class TestPersistentApplicationFinder(_Base):
         environ = {}
         app = finder(environ)
         self.assertEqual(app, 'abc')
-        self.assertEqual(self.root.made, True)
-        self.assertEqual(self.root.closed, False)
+        self.failUnless(self.root.made)
+        self.failIf(self.root.closed)
         self.assertEqual(environ['XXX'], None)
         del environ[CLOSER_KEY]
-        self.assertEqual(self.root.closed, True)
+        self.failUnless(self.root.closed)
         self.assertEqual(finder.db, self.db)
 
     def test_call_with_db_no_cleanup(self):
@@ -139,10 +139,10 @@ class TestPersistentApplicationFinder(_Base):
         environ = {}
         app = finder(environ)
         self.assertEqual(app, 'abc')
-        self.assertEqual(self.root.made, True)
-        self.assertEqual(self.root.closed, False)
+        self.failUnless(self.root.made)
+        self.failIf(self.root.closed)
         del environ[CLOSER_KEY]
-        self.assertEqual(self.root.closed, True)
+        self.failUnless(self.root.closed)
 
     def test_call_with_db_w_cleanup(self):
         from repoze.zodbconn.finder import CLOSER_KEY
@@ -154,55 +154,76 @@ class TestPersistentApplicationFinder(_Base):
         environ = {}
         app = finder(environ)
         self.assertEqual(app, 'abc')
-        self.assertEqual(self.root.made, True)
-        self.assertEqual(self.root.closed, False)
+        self.failUnless(self.root.made)
+        self.failIf(self.root.closed)
         self.assertEqual(environ['XXX'], None)
         del environ[CLOSER_KEY]
-        self.assertEqual(self.root.closed, True)
+        self.failUnless(self.root.closed)
 
-    def test_get_connection_from_environ(self):
+    def test_get_connection_from_environ_connector_key(self):
         from repoze.zodbconn.finder import CLOSER_KEY
+        from repoze.zodbconn.connector import CONNECTION_KEY
         def makeapp(root):
             root.made = True
             return 'abc'
         finder = self._makeOne('foo://bar.baz', makeapp)
         db = DummyDB(self.root, 'another')
         conn = db.open()
-        environ = {'repoze.zodbconn.connection': conn}
+        environ = {CONNECTION_KEY: conn}
         app = finder(environ)
         self.assertEqual(app, 'abc')
-        self.assertEqual(self.root.made, True)
-        self.assertEqual(self.root.closed, False)
+        self.failUnless(self.root.made)
+        self.failIf(self.root.closed)
         self.failIf(CLOSER_KEY in environ)
+
+    def test_get_connection_from_environ_closer_key(self):
+        from repoze.zodbconn.finder import CLOSER_KEY
+        def makeapp(root):
+            root.made = True
+            return 'abc'
+        finder = self._makeOne('foo://bar.baz', makeapp)
+        root = DummyRoot()
+        db = DummyDB(root, 'another')
+        conn = db.open()
+        environ = {CLOSER_KEY: conn.close}
+        app = finder(environ)
+        self.assertEqual(app, 'abc')
+        self.failIf('made' in self.root.__dict__)
+        self.failUnless(root.made)
+        self.failIf(self.root.closed)
+        self.failIf(root.closed)
+        self.failUnless(CLOSER_KEY in environ)
 
     def test_ignore_connection_from_environ(self):
         from repoze.zodbconn.finder import CLOSER_KEY
+        from repoze.zodbconn.connector import CONNECTION_KEY
         def makeapp(root):
             root.made = True
             return 'abc'
         finder = self._makeOne('foo://bar.baz', makeapp, connection_key=None)
         db = DummyDB(self.root, 'another')
         conn = db.open()
-        environ = {'repoze.zodbconn.connection': conn}
+        environ = {CONNECTION_KEY: conn}
         app = finder(environ)
         self.assertEqual(app, 'abc')
-        self.assertEqual(self.root.made, True)
-        self.assertEqual(self.root.closed, False)
+        self.failUnless(self.root.made)
+        self.failIf(self.root.closed)
         self.failUnless(CLOSER_KEY in environ)
 
     def test_call_no_uri(self):
         from repoze.zodbconn.finder import CLOSER_KEY
+        from repoze.zodbconn.connector import CONNECTION_KEY
         def makeapp(root):
             root.made = True
             return 'abc'
         finder = self._makeOne('', makeapp)
         db = DummyDB(self.root, 'another')
         conn = db.open()
-        environ = {'repoze.zodbconn.connection': conn}
+        environ = {CONNECTION_KEY: conn}
         app = finder(environ)
         self.assertEqual(app, 'abc')
-        self.assertEqual(self.root.made, True)
-        self.assertEqual(self.root.closed, False)
+        self.failUnless(self.root.made)
+        self.failIf(self.root.closed)
         self.failIf(CLOSER_KEY in environ)
 
 

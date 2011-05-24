@@ -61,6 +61,11 @@ class PersistentApplicationFinder:
             conn = environ.get(self.connection_key)
 
         if conn is None:
+            closer = environ.get(CLOSER_KEY)
+            if closer is not None:
+                conn = closer.im_self
+
+        if conn is None:
             conn = self.db.open()
             # We opened this connection, which means we have the
             # responsibility for closing it.
