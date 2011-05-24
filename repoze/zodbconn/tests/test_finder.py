@@ -1,6 +1,18 @@
 import unittest
 
-class TestSimpleCleanup(unittest.TestCase):
+class _Base(unittest.TestCase):
+
+    def failIf(self, expr, msg=None):
+        # silence stupid 2.7 stdlib deprecation
+        if expr: #pragma NO COVERAGE
+            raise self.failureException, msg
+
+    def failUnless(self, expr, msg=None):
+        # silence stupid 2.7 stdlib deprecation
+        if not expr: #pragma NO COVERAGE
+            raise self.failureException, msg
+
+class TestSimpleCleanup(_Base):
 
     def _getTargetClass(self):
         from repoze.zodbconn.finder import SimpleCleanup
@@ -17,7 +29,7 @@ class TestSimpleCleanup(unittest.TestCase):
         del cleanup
         self.failUnless(root.closed)
 
-class TestLoggingCleanup(unittest.TestCase):
+class TestLoggingCleanup(_Base):
 
     def _getTargetClass(self):
         from repoze.zodbconn.finder import LoggingCleanup
@@ -57,7 +69,7 @@ class TestLoggingCleanup(unittest.TestCase):
 
 _marker = object()
 
-class TestPersistentApplicationFinder(unittest.TestCase):
+class TestPersistentApplicationFinder(_Base):
     def setUp(self):
         from repoze.zodbconn.resolvers import RESOLVERS
         self.root = DummyRoot()
@@ -87,6 +99,7 @@ class TestPersistentApplicationFinder(unittest.TestCase):
         self.failUnless(finder.cleanup is SimpleCleanup)
 
     def test_call_no_db_no_cleanup(self):
+        from repoze.zodbconn.finder import CLOSER_KEY
         def makeapp(root):
             root.made = True
             return 'abc'
@@ -96,11 +109,12 @@ class TestPersistentApplicationFinder(unittest.TestCase):
         self.assertEqual(app, 'abc')
         self.assertEqual(self.root.made, True)
         self.assertEqual(self.root.closed, False)
-        del environ['repoze.zodbconn.closer']
+        del environ[CLOSER_KEY]
         self.assertEqual(self.root.closed, True)
         self.assertEqual(finder.db, self.db)
 
     def test_call_no_db_w_cleanup(self):
+        from repoze.zodbconn.finder import CLOSER_KEY
         def makeapp(root):
             root.made = True
             return 'abc'
@@ -111,11 +125,12 @@ class TestPersistentApplicationFinder(unittest.TestCase):
         self.assertEqual(self.root.made, True)
         self.assertEqual(self.root.closed, False)
         self.assertEqual(environ['XXX'], None)
-        del environ['repoze.zodbconn.closer']
+        del environ[CLOSER_KEY]
         self.assertEqual(self.root.closed, True)
         self.assertEqual(finder.db, self.db)
 
     def test_call_with_db_no_cleanup(self):
+        from repoze.zodbconn.finder import CLOSER_KEY
         def makeapp(root):
             root.made = True
             return 'abc'
@@ -126,10 +141,11 @@ class TestPersistentApplicationFinder(unittest.TestCase):
         self.assertEqual(app, 'abc')
         self.assertEqual(self.root.made, True)
         self.assertEqual(self.root.closed, False)
-        del environ['repoze.zodbconn.closer']
+        del environ[CLOSER_KEY]
         self.assertEqual(self.root.closed, True)
 
     def test_call_with_db_w_cleanup(self):
+        from repoze.zodbconn.finder import CLOSER_KEY
         def makeapp(root):
             root.made = True
             return 'abc'
@@ -141,10 +157,11 @@ class TestPersistentApplicationFinder(unittest.TestCase):
         self.assertEqual(self.root.made, True)
         self.assertEqual(self.root.closed, False)
         self.assertEqual(environ['XXX'], None)
-        del environ['repoze.zodbconn.closer']
+        del environ[CLOSER_KEY]
         self.assertEqual(self.root.closed, True)
 
     def test_get_connection_from_environ(self):
+        from repoze.zodbconn.finder import CLOSER_KEY
         def makeapp(root):
             root.made = True
             return 'abc'
@@ -156,9 +173,10 @@ class TestPersistentApplicationFinder(unittest.TestCase):
         self.assertEqual(app, 'abc')
         self.assertEqual(self.root.made, True)
         self.assertEqual(self.root.closed, False)
-        self.assertFalse('repoze.zodbconn.closer' in environ)
+        self.failIf(CLOSER_KEY in environ)
 
     def test_ignore_connection_from_environ(self):
+        from repoze.zodbconn.finder import CLOSER_KEY
         def makeapp(root):
             root.made = True
             return 'abc'
@@ -170,9 +188,10 @@ class TestPersistentApplicationFinder(unittest.TestCase):
         self.assertEqual(app, 'abc')
         self.assertEqual(self.root.made, True)
         self.assertEqual(self.root.closed, False)
-        self.assertTrue('repoze.zodbconn.closer' in environ)
+        self.failUnless(CLOSER_KEY in environ)
 
     def test_call_no_uri(self):
+        from repoze.zodbconn.finder import CLOSER_KEY
         def makeapp(root):
             root.made = True
             return 'abc'
@@ -184,7 +203,7 @@ class TestPersistentApplicationFinder(unittest.TestCase):
         self.assertEqual(app, 'abc')
         self.assertEqual(self.root.made, True)
         self.assertEqual(self.root.closed, False)
-        self.assertFalse('repoze.zodbconn.closer' in environ)
+        self.failIf(CLOSER_KEY in environ)
 
 
 class DummyRoot:
@@ -227,4 +246,6 @@ class DummyLogger:
         self._wrote = []
 
     def write(self, chunk):
-        self._wrote.append(chunk)
+        # This line *does* get called, but somehow the coverage plugin
+        # misses it (maybe because it is inside the closer's __del__?
+        self._wrote.append(chunk) #pragma NO COVERAGE

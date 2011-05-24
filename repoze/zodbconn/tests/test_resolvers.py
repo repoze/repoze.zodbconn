@@ -1,6 +1,17 @@
 import unittest
 
 class Base:
+
+    def failIf(self, expr, msg=None):
+        # silence stupid 2.7 stdlib deprecation
+        if expr: #pragma NO COVERAGE
+            raise self.failureException, msg
+
+    def failUnless(self, expr, msg=None):
+        # silence stupid 2.7 stdlib deprecation
+        if not expr: #pragma NO COVERAGE
+            raise self.failureException, msg
+
     def test_interpret_kwargs_noargs(self):
         resolver = self._makeOne()
         kwargs = resolver.interpret_kwargs({})
@@ -360,7 +371,7 @@ class TestZConfigURIResolver(unittest.TestCase):
         k, args, kw, factory = resolver('zconfig://%s#demodb' % self.tmp.name)
         db = factory()
         from ZODB.MappingStorage import MappingStorage
-        self.assertTrue(isinstance(db._storage, MappingStorage))
+        self.failUnless(isinstance(db._storage, MappingStorage))
 
     def test_anonymous_database(self):
         self.tmp.write("""
@@ -379,7 +390,7 @@ class TestZConfigURIResolver(unittest.TestCase):
         k, args, kw, factory = resolver('zconfig://%s' % self.tmp.name)
         db = factory()
         from ZODB.MappingStorage import MappingStorage
-        self.assertTrue(isinstance(db._storage, MappingStorage))
+        self.failUnless(isinstance(db._storage, MappingStorage))
 
     def test_database_not_found(self):
         self.tmp.write("""

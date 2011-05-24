@@ -11,12 +11,7 @@ class TestConnector(unittest.TestCase):
 
     def failIf(self, expr, msg=None):
         # silence stupid 2.7 stdlib deprecation
-        if expr:
-            raise self.failureException, msg
-
-    def failUnless(self, expr, msg=None):
-        # silence stupid 2.7 stdlib deprecation
-        if not expr:
+        if expr: #pragma NO COVERAGE
             raise self.failureException, msg
 
     def test_ctor(self):
