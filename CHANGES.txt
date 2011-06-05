@@ -11,6 +11,9 @@ After 0.12 (unreleased)
 - Extend ``repoze.zodbconn.connector`` middleware to support streaming
   applications.  Thanks to Stéphane Klein for the patch.
 
+- New URI resolver type: ``memory://``, which creates a
+  ZODB.MappingStorage.MappingStorage storage.
+
 0.12 (2010-06-25)
 -----------------
 

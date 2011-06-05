@@ -207,6 +207,47 @@ In that case, use a URI with a fragment identifier::
 
     zconfig:///etc/myapp/zodb.conf#temp1
 
+``memory://`` URI scheme
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The ``memory://`` URI scheme can be passed to ``db_from_uri`` to create a
+ZODB MappingStorage (memory-based) database factory.  The path info section
+of this scheme should be a storage name.  For example::
+
+  memory://storagename
+
+However, the storage name is usually omitted, and the most common form is
+
+  memory://
+
+The URI scheme also accepts query string arguments.  The query string
+arguments honored by this scheme are as follows.
+
+Database-related
+++++++++++++++++
+
+These arguments relate to the database (as opposed to storage)
+settings.
+
+database_name
+  string
+
+Connection-related
+++++++++++++++++++
+
+These arguments relate to connections created from the database.
+
+connection_cache_size
+  integer (default 10000)
+connection_pool_size
+  integer (default 7)
+
+Example
++++++++
+
+An example that combines a dbname with a query string::
+
+   memory://storagename?connection_cache_size=100&database_name=fleeb
 
 Multi-Database Support
 ----------------------
