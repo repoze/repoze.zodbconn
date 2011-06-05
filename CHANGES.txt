@@ -1,15 +1,15 @@
 ``repoze.zodbconn`` Changelog
 =============================
 
-After 0.12 (unreleased)
------------------------
+0.13 (2011-06-04)
+-----------------
 
 - If a closer is already present in the environment, allow the finder
   to use it's ``im_self`` as the connection, rather than opening a new
   connection.
 
 - Extend ``repoze.zodbconn.connector`` middleware to support streaming
-  applications.  Thanks to Stéphane Klein for the patch.
+  applications.  Thanks to Stephane Klein for the patch.
 
 - New URI resolver type: ``memory://``, which creates a
   ZODB.MappingStorage.MappingStorage storage.
