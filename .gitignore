@@ -3,3 +3,4 @@
 .coverage
 docs/.build
 env26/
+dist/
