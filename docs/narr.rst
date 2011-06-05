@@ -6,8 +6,8 @@ You can retrieve databases using a URI syntax::
   from repoze.zodbconn.uri import db_from_uri
   db = db_from_uri('zeo://localhost:9991?cache_size=25MB')
 
-The URI schemes currently recognized are ``file://``, ``zeo://``, and
-``zconfig://``.
+The URI schemes currently recognized are ``file://``, ``zeo://``, 
+``zconfig://`` and ``memory://``.
 
 ``file://`` URI scheme
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -216,7 +216,7 @@ of this scheme should be a storage name.  For example::
 
   memory://storagename
 
-However, the storage name is usually omitted, and the most common form is
+However, the storage name is usually omitted, and the most common form is::
 
   memory://
 
