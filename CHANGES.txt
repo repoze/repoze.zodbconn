@@ -11,6 +11,12 @@
 - Made sure the ``repoze.zodbconn.connector`` middleware calls the sub
   application before returning an iterator.
 
+- Reverted the change from 0.12 to eagerly open the database at startup time.
+  Changed to lazily opening the database but the accessor for the database is
+  now guarded by a lock in order to prevent the race condition being targed by
+  the change from 0.12.
+
+
 0.13 (2011-06-04)
 -----------------
 
