@@ -8,6 +8,9 @@
   in the factory for demo and blob storage, the demo storage now wraps the
   blob storage instead of the other way around as it was previously.
 
+- Made sure the ``repoze.zodbconn.connector`` middleware calls the sub
+  application before returning an iterator.
+
 0.13 (2011-06-04)
 -----------------
 
