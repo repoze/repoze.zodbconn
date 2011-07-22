@@ -85,7 +85,7 @@ class MappingStorageURIResolver(Resolver):
             storage = MappingStorage(*args)
             return DB(storage, **dbkw)
         return key, args, kw, factory
-        
+
 class FileStorageURIResolver(Resolver):
     _int_args = ('create', 'read_only', 'demostorage', 'connection_cache_size',
                  'connection_pool_size')
@@ -126,10 +126,10 @@ class FileStorageURIResolver(Resolver):
         if demostorage and blobstorage_dir:
             def factory():
                 filestorage = FileStorage(*args, **kw)
-                demostorage = DemoStorage(base=filestorage)
-                blobstorage = BlobStorage(blobstorage_dir, demostorage,
+                blobstorage = BlobStorage(blobstorage_dir, filestorage,
                                           layout=blobstorage_layout)
-                return DB(blobstorage, **dbkw)
+                demostorage = DemoStorage(base=blobstorage)
+                return DB(demostorage, **dbkw)
         elif blobstorage_dir:
             def factory():
                 filestorage = FileStorage(*args, **kw)

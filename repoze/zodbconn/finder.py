@@ -1,3 +1,4 @@
+from threading import Lock
 
 from repoze.zodbconn.uri import db_from_uri
 from repoze.zodbconn.uri import dbfactory_from_uri  # BBB
@@ -43,6 +44,8 @@ class LoggingCleanup:
                                 % (self.request_method, url, loads, stores))
 
 class PersistentApplicationFinder:
+    _db = None
+
     def __init__(self, uri, appmaker, cleanup=SimpleCleanup,
             connection_key=CONNECTION_KEY):
         self.uri = uri
@@ -50,9 +53,8 @@ class PersistentApplicationFinder:
         self.connection_key = connection_key
         self.cleanup = cleanup
         if uri is None: # it will be None during *tests* only
-            self.db = None
-        else:
-            self.db = db_from_uri(self.uri)
+            self.__dict__['db'] = None
+        self._db_lock = Lock()
 
     def __call__(self, environ):
         conn = None
@@ -75,3 +77,16 @@ class PersistentApplicationFinder:
         app = self.appmaker(root)
 
         return app
+
+    @property
+    def db(self):
+        lock = self._db_lock
+        lock.acquire()
+        try:
+            db = self._db
+            if db is None:
+                self._db = db = db_from_uri(self.uri)
+            return db
+        finally:
+            lock.release()
+
