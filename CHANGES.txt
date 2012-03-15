@@ -1,8 +1,8 @@
 ``repoze.zodbconn`` Changelog
 =============================
 
-After 0.12 (unreleased)
------------------------
+0.13 (2012-03-16)
+-----------------
 
 - If a closer is already present in the environment, allow the finder
   to use it's ``im_self`` as the connection, rather than opening a new
