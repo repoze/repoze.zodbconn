@@ -1,7 +1,7 @@
 ``repoze.zodbconn`` Changelog
 =============================
 
-0.14 (unreleased)
+0.14 (2012-03-16)
 -----------------
 
 - Made compatible with ZODB 3.10.3.  The only change to non-testing code is
