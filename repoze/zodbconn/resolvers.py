@@ -9,6 +9,7 @@ from repoze.zodbconn.datatypes import TRUETYPES
 
 from ZODB.FileStorage.FileStorage import FileStorage
 from ZODB.DemoStorage import DemoStorage
+from ZODB.MappingStorage import MappingStorage
 from ZODB.blob import BlobStorage
 from ZODB.DB import DB
 import ZConfig
@@ -61,6 +62,30 @@ class Resolver(object):
         new.update(newkw)
         return new
 
+class MappingStorageURIResolver(Resolver):
+    _int_args = ('connection_cache_size', 'connection_pool_size')
+    _string_args = ('database_name',)
+    _bytesize_args = ()
+    def __call__(self, uri):
+        prefix, rest = uri.split('memory://', 1)
+        result = rest.split('?', 1)
+        if len(result) == 1:
+            name = result[0]
+            query = ''
+        else:
+            name, query = result
+        kw = dict(cgi.parse_qsl(query))
+        kw = self.interpret_kwargs(kw)
+        dbkw = get_dbkw(kw)
+        args = (name,)
+        dbitems = dbkw.items()
+        dbitems.sort()
+        key = (args, tuple(dbitems))
+        def factory():
+            storage = MappingStorage(*args)
+            return DB(storage, **dbkw)
+        return key, args, kw, factory
+
 class FileStorageURIResolver(Resolver):
     _int_args = ('create', 'read_only', 'demostorage', 'connection_cache_size',
                  'connection_pool_size')
@@ -101,10 +126,10 @@ class FileStorageURIResolver(Resolver):
         if demostorage and blobstorage_dir:
             def factory():
                 filestorage = FileStorage(*args, **kw)
-                demostorage = DemoStorage(base=filestorage)
-                blobstorage = BlobStorage(blobstorage_dir, demostorage,
+                blobstorage = BlobStorage(blobstorage_dir, filestorage,
                                           layout=blobstorage_layout)
-                return DB(blobstorage, **dbkw)
+                demostorage = DemoStorage(base=blobstorage)
+                return DB(demostorage, **dbkw)
         elif blobstorage_dir:
             def factory():
                 filestorage = FileStorage(*args, **kw)
@@ -222,4 +247,5 @@ RESOLVERS = {
     'zeo':ClientStorageURIResolver(),
     'file':FileStorageURIResolver(),
     'zconfig':ZConfigURIResolver(),
+    'memory':MappingStorageURIResolver(),
     }

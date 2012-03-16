@@ -24,6 +24,7 @@ class TestConnector(unittest.TestCase):
 
     def test_call(self):
         from repoze.zodbconn.connector import CONNECTION_KEY
+        start_resposne_called = []
         def dummy_app(environ, start_response):
             conn = environ[CONNECTION_KEY]
             environ['testconn'] = conn
@@ -31,7 +32,11 @@ class TestConnector(unittest.TestCase):
         db = DummyDB()
         app = self._makeOne(dummy_app, db)
         environ = {}
-        list(app(environ, None)) # consume the generator
+
+        app_iter = app(environ, None)
+        self.failUnless('testconn' in environ)
+        self.failIf(db.conn.closed)
+        list(app_iter) # consume the generator
         conn = environ['testconn']
         self.assertEqual(conn.closed, True)
         self.failIf(CONNECTION_KEY in environ)
@@ -105,7 +110,8 @@ class DummyDB:
     def __init__(self):
         self.databases = {'unnamed': self}
     def open(self):
-        return DummyConnection()
+        self.conn = DummyConnection()
+        return self.conn
 
 class DummyTransactionManager:
     def abort(self):

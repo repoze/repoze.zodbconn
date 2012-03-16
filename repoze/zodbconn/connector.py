@@ -18,13 +18,26 @@ class Connector:
         conn = self.db.open()
         environ[self.connection_key] = conn
         try:
-            for chunk in self.next_app(environ, start_response):
+            return self._iter(
+                self.next_app(environ, start_response),
+                environ, conn)
+        except:
+            self._close(environ, conn)
+            raise
+
+    def _iter(self, app_iter, environ, conn):
+        try:
+            for chunk in app_iter:
                 yield chunk
         finally:
-            if self.connection_key in environ:
-                del environ[self.connection_key]
-            conn.transaction_manager.abort()
-            conn.close()
+            self._close(environ, conn)
+
+    def _close(self, environ, conn):
+        if self.connection_key in environ:
+            del environ[self.connection_key]
+        conn.transaction_manager.abort()
+        conn.close()
+
 
 def make_app(next_app, global_conf, **local_conf):
     """Make a Connector app.  Expects keyword parameters:

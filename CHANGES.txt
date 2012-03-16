@@ -1,7 +1,23 @@
 ``repoze.zodbconn`` Changelog
 =============================
 
-0.13 (2012-03-16)
+0.14 (unreleased)
+-----------------
+
+- Made compatible with ZODB 3.10.3.  The only change to non-testing code is
+  in the factory for demo and blob storage, the demo storage now wraps the
+  blob storage instead of the other way around as it was previously.
+
+- Made sure the ``repoze.zodbconn.connector`` middleware calls the sub
+  application before returning an iterator.
+
+- Reverted the change from 0.12 to eagerly open the database at startup time.
+  Changed to lazily opening the database but the accessor for the database is
+  now guarded by a lock in order to prevent the race condition being targed by
+  the change from 0.12.
+
+
+0.13 (2011-06-04)
 -----------------
 
 - If a closer is already present in the environment, allow the finder
@@ -9,7 +25,10 @@
   connection.
 
 - Extend ``repoze.zodbconn.connector`` middleware to support streaming
-  applications.  Thanks to Stéphane Klein for the patch.
+  applications.  Thanks to Stephane Klein for the patch.
+
+- New URI resolver type: ``memory://``, which creates a
+  ZODB.MappingStorage.MappingStorage storage.
 
 0.12 (2010-06-25)
 -----------------

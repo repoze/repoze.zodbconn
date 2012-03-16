@@ -1,5 +1,6 @@
 import unittest
 
+
 class Base:
 
     def failIf(self, expr, msg=None):
@@ -29,7 +30,7 @@ class Base:
         self.assertEqual(keys, names)
         for name, value in args.items():
             self.assertEqual(value, 10*1024*1024)
-    
+
     def test_int_args(self):
         resolver = self._makeOne()
         names = list(resolver._int_args)
@@ -56,22 +57,6 @@ class Base:
         for name, value in args.items():
             self.assertEqual(value, 'string')
 
-    def test_bool_args(self):
-        resolver = self._makeOne()
-        f = resolver.interpret_kwargs
-        kwargs = f({'read_only':'1'})
-        self.assertEqual(kwargs, {'read_only':1})
-        kwargs = f({'read_only':'true'})
-        self.assertEqual(kwargs, {'read_only':1})
-        kwargs = f({'read_only':'on'})
-        self.assertEqual(kwargs, {'read_only':1})
-        kwargs = f({'read_only':'off'})
-        self.assertEqual(kwargs, {'read_only':0})
-        kwargs = f({'read_only':'no'})
-        self.assertEqual(kwargs, {'read_only':0})
-        kwargs = f({'read_only':'false'})
-        self.assertEqual(kwargs, {'read_only':0})
-
 class TestFileStorageURIResolver(Base, unittest.TestCase):
 
     def _getTargetClass(self):
@@ -89,6 +74,22 @@ class TestFileStorageURIResolver(Base, unittest.TestCase):
     def tearDown(self):
         import shutil
         shutil.rmtree(self.tmpdir)
+
+    def test_bool_args(self):
+        resolver = self._makeOne()
+        f = resolver.interpret_kwargs
+        kwargs = f({'read_only':'1'})
+        self.assertEqual(kwargs, {'read_only':1})
+        kwargs = f({'read_only':'true'})
+        self.assertEqual(kwargs, {'read_only':1})
+        kwargs = f({'read_only':'on'})
+        self.assertEqual(kwargs, {'read_only':1})
+        kwargs = f({'read_only':'off'})
+        self.assertEqual(kwargs, {'read_only':0})
+        kwargs = f({'read_only':'no'})
+        self.assertEqual(kwargs, {'read_only':0})
+        kwargs = f({'read_only':'false'})
+        self.assertEqual(kwargs, {'read_only':0})
 
     def test_call_no_qs(self):
         resolver = self._makeOne()
@@ -158,7 +159,7 @@ class TestFileStorageURIResolver(Base, unittest.TestCase):
                         )
         db = factory()
         self.failUnless(isinstance(db._storage, DemoStorage))
-        self.failUnless(isinstance(db._storage._base, FileStorage))
+        self.failUnless(isinstance(get_base(db._storage), FileStorage))
         self.failUnless(os.path.exists(DB_FILE))
 
     def test_blobstorage(self):
@@ -174,7 +175,6 @@ class TestFileStorageURIResolver(Base, unittest.TestCase):
         from urllib import quote as q
         from ZODB.blob import BlobStorage
         from ZODB.FileStorage import FileStorage
-        from zope.proxy import getProxiedObject
         DB_FILE = os.path.join(self.tmpdir, 'db.db')
         BLOB_DIR = os.path.join(self.tmpdir, 'blob')
         self.failIf(os.path.exists(DB_FILE))
@@ -197,7 +197,7 @@ class TestFileStorageURIResolver(Base, unittest.TestCase):
                         )
         db = factory()
         self.failUnless(isinstance(db._storage, BlobStorage))
-        self.failUnless(isinstance(getProxiedObject(db._storage), FileStorage))
+        self.failUnless(isinstance(get_base(db._storage), FileStorage))
         self.failUnless(os.path.exists(DB_FILE))
         self.failUnless(os.path.exists(BLOB_DIR))
 
@@ -215,7 +215,6 @@ class TestFileStorageURIResolver(Base, unittest.TestCase):
         from ZODB.blob import BlobStorage
         from ZODB.DemoStorage import DemoStorage
         from ZODB.FileStorage import FileStorage
-        from zope.proxy import getProxiedObject
         DB_FILE = os.path.join(self.tmpdir, 'db.db')
         BLOB_DIR = os.path.join(self.tmpdir, 'blob')
         self.failIf(os.path.exists(DB_FILE))
@@ -238,9 +237,9 @@ class TestFileStorageURIResolver(Base, unittest.TestCase):
                          )
                         )
         db = factory()
-        self.failUnless(isinstance(db._storage, BlobStorage))
-        self.failUnless(isinstance(getProxiedObject(db._storage), DemoStorage))
-        self.failUnless(isinstance(getProxiedObject(db._storage)._base,
+        self.failUnless(isinstance(db._storage, DemoStorage))
+        self.failUnless(isinstance(get_base(db._storage), BlobStorage))
+        self.failUnless(isinstance(get_base(get_base(db._storage)),
                                    FileStorage))
         self.failUnless(os.path.exists(DB_FILE))
         self.failUnless(os.path.exists(BLOB_DIR))
@@ -253,7 +252,7 @@ class TestFileStorageURIResolver(Base, unittest.TestCase):
         self.assertEqual(k[2],
                          (('cache_size', 1), ('database_name', 'dbname'),
                           ('pool_size', 1)))
-        
+
 
 class TestClientStorageURIResolver(unittest.TestCase):
     def _getTargetClass(self):
@@ -263,6 +262,22 @@ class TestClientStorageURIResolver(unittest.TestCase):
     def _makeOne(self):
         klass = self._getTargetClass()
         return klass()
+
+    def test_bool_args(self):
+        resolver = self._makeOne()
+        f = resolver.interpret_kwargs
+        kwargs = f({'read_only':'1'})
+        self.assertEqual(kwargs, {'read_only':1})
+        kwargs = f({'read_only':'true'})
+        self.assertEqual(kwargs, {'read_only':1})
+        kwargs = f({'read_only':'on'})
+        self.assertEqual(kwargs, {'read_only':1})
+        kwargs = f({'read_only':'off'})
+        self.assertEqual(kwargs, {'read_only':0})
+        kwargs = f({'read_only':'no'})
+        self.assertEqual(kwargs, {'read_only':0})
+        kwargs = f({'read_only':'false'})
+        self.assertEqual(kwargs, {'read_only':0})
 
     def test_call_tcp_no_port(self):
         resolver = self._makeOne()
@@ -402,3 +417,56 @@ class TestZConfigURIResolver(unittest.TestCase):
         self.tmp.flush()
         resolver = self._makeOne()
         self.assertRaises(KeyError, resolver, 'zconfig://%s#y' % self.tmp.name)
+
+class TestMappingStorageURIResolver(Base, unittest.TestCase):
+
+    def _getTargetClass(self):
+        from repoze.zodbconn.resolvers import MappingStorageURIResolver
+        return MappingStorageURIResolver
+
+    def _makeOne(self):
+        klass = self._getTargetClass()
+        return klass()
+
+    def test_call_no_qs(self):
+        resolver = self._makeOne()
+        k, args, kw, factory = resolver('memory://')
+        self.assertEqual(args, ('',))
+        self.assertEqual(kw, {})
+        db = factory()
+        from ZODB.MappingStorage import MappingStorage
+        self.failUnless(isinstance(db._storage, MappingStorage))
+
+    def test_call_with_qs(self):
+        uri='memory://storagename?connection_cache_size=100&database_name=fleeb'
+        resolver = self._makeOne()
+        k, args, kw, factory = resolver(uri)
+        self.assertEqual(args, ('storagename',))
+        self.assertEqual(kw, {})
+        self.assertEqual(k,  (('storagename',),
+                              (('cache_size', 100), ('database_name', 'fleeb'),
+                               ('pool_size', 7))))
+        db = factory()
+        from ZODB.MappingStorage import MappingStorage
+        self.failUnless(isinstance(db._storage, MappingStorage))
+
+
+def get_base(storage): #pragma NO COVERAGE
+    """
+    The way to find the wrapped storage for a demo or blob storage
+    changes from one ZODB version to the next and is inconsistent
+    between storages.  Putting the 'un' back in 'fun'.
+    """
+    try:
+        from zope.proxy import getProxiedObject
+        base = getProxiedObject(storage)
+        if base is not storage:
+            return base
+    except ImportError:
+        pass
+    base = getattr(storage, '_base', None)
+    if base is None:
+        base = getattr(storage, '_BlobStorage__storage', None)
+    if base is None:
+        base = storage.base
+    return base
