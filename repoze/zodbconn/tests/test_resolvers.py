@@ -1,5 +1,6 @@
 import unittest
 
+
 class Base:
 
     def failIf(self, expr, msg=None):
@@ -29,7 +30,7 @@ class Base:
         self.assertEqual(keys, names)
         for name, value in args.items():
             self.assertEqual(value, 10*1024*1024)
-    
+
     def test_int_args(self):
         resolver = self._makeOne()
         names = list(resolver._int_args)
@@ -158,7 +159,7 @@ class TestFileStorageURIResolver(Base, unittest.TestCase):
                         )
         db = factory()
         self.failUnless(isinstance(db._storage, DemoStorage))
-        self.failUnless(isinstance(db._storage._base, FileStorage))
+        self.failUnless(isinstance(get_base(db._storage), FileStorage))
         self.failUnless(os.path.exists(DB_FILE))
 
     def test_blobstorage(self):
@@ -174,7 +175,6 @@ class TestFileStorageURIResolver(Base, unittest.TestCase):
         from urllib import quote as q
         from ZODB.blob import BlobStorage
         from ZODB.FileStorage import FileStorage
-        from zope.proxy import getProxiedObject
         DB_FILE = os.path.join(self.tmpdir, 'db.db')
         BLOB_DIR = os.path.join(self.tmpdir, 'blob')
         self.failIf(os.path.exists(DB_FILE))
@@ -197,7 +197,7 @@ class TestFileStorageURIResolver(Base, unittest.TestCase):
                         )
         db = factory()
         self.failUnless(isinstance(db._storage, BlobStorage))
-        self.failUnless(isinstance(getProxiedObject(db._storage), FileStorage))
+        self.failUnless(isinstance(get_base(db._storage), FileStorage))
         self.failUnless(os.path.exists(DB_FILE))
         self.failUnless(os.path.exists(BLOB_DIR))
 
@@ -215,7 +215,6 @@ class TestFileStorageURIResolver(Base, unittest.TestCase):
         from ZODB.blob import BlobStorage
         from ZODB.DemoStorage import DemoStorage
         from ZODB.FileStorage import FileStorage
-        from zope.proxy import getProxiedObject
         DB_FILE = os.path.join(self.tmpdir, 'db.db')
         BLOB_DIR = os.path.join(self.tmpdir, 'blob')
         self.failIf(os.path.exists(DB_FILE))
@@ -238,9 +237,9 @@ class TestFileStorageURIResolver(Base, unittest.TestCase):
                          )
                         )
         db = factory()
-        self.failUnless(isinstance(db._storage, BlobStorage))
-        self.failUnless(isinstance(getProxiedObject(db._storage), DemoStorage))
-        self.failUnless(isinstance(getProxiedObject(db._storage)._base,
+        self.failUnless(isinstance(db._storage, DemoStorage))
+        self.failUnless(isinstance(get_base(db._storage), BlobStorage))
+        self.failUnless(isinstance(get_base(get_base(db._storage)),
                                    FileStorage))
         self.failUnless(os.path.exists(DB_FILE))
         self.failUnless(os.path.exists(BLOB_DIR))
@@ -253,7 +252,7 @@ class TestFileStorageURIResolver(Base, unittest.TestCase):
         self.assertEqual(k[2],
                          (('cache_size', 1), ('database_name', 'dbname'),
                           ('pool_size', 1)))
-        
+
 
 class TestClientStorageURIResolver(unittest.TestCase):
     def _getTargetClass(self):
@@ -450,4 +449,24 @@ class TestMappingStorageURIResolver(Base, unittest.TestCase):
         db = factory()
         from ZODB.MappingStorage import MappingStorage
         self.failUnless(isinstance(db._storage, MappingStorage))
-        
+
+
+def get_base(storage): #pragma NO COVERAGE
+    """
+    The way to find the wrapped storage for a demo or blob storage
+    changes from one ZODB version to the next and is inconsistent
+    between storages.  Putting the 'un' back in 'fun'.
+    """
+    try:
+        from zope.proxy import getProxiedObject
+        base = getProxiedObject(storage)
+        if base is not storage:
+            return base
+    except ImportError:
+        pass
+    base = getattr(storage, '_base', None)
+    if base is None:
+        base = getattr(storage, '_BlobStorage__storage', None)
+    if base is None:
+        base = storage.base
+    return base

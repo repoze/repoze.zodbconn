@@ -26,6 +26,13 @@ class TestCacheCleanup(unittest.TestCase):
     def tearDown(self):
         self.db.close()
 
+    def assertConnectionOpened(self, conn): #pragma NO COVERAGE
+        # Attribute name changes across ZODB versions
+        opened = getattr(conn, '_opened', None)
+        if opened is None:
+            opened = conn.opened
+        self.assertNotEqual(opened, None)
+
     def test_cleanup(self):
         from repoze.zodbconn.cachecleanup import CacheCleanup
         connection_key = 'connection'
@@ -34,7 +41,7 @@ class TestCacheCleanup(unittest.TestCase):
             conn = environ[connection_key]
             root = conn.root()
             root['keepme']['extra'].values()  # load objects
-            self.assertNotEqual(conn._opened, None)
+            self.assertConnectionOpened(conn)
             self.assertEqual(root._p_changed, False)
             self.assertEqual(root['keepme']._p_changed, False)
             self.assertEqual(root['keepme']['extra']._p_changed, False)
