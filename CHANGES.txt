@@ -1,6 +1,11 @@
 ``repoze.zodbconn`` Changelog
 =============================
 
+After 0.14
+----------
+
+- Add support for Python 3.2 / 3.3.
+
 0.14 (2012-03-16)
 -----------------
 
