@@ -23,9 +23,12 @@ from setuptools import setup, find_packages
 
 requires = [
     'setuptools',
-    'ZODB3 >= 3.8.1',
+    'transaction',
+    'persistent',
     'ZConfig',
-    ]
+    'ZODB',
+    'ZEO',
+]
 
 here = os.path.abspath(os.path.dirname(__file__))
 README = open(os.path.join(here, 'README.txt')).read()
@@ -66,5 +69,4 @@ setup(name='repoze.zodbconn',
       cachecleanup = repoze.zodbconn.cachecleanup:make_app
       transferlog = repoze.zodbconn.transferlog:make_app
       """
-      )
-
+     )
