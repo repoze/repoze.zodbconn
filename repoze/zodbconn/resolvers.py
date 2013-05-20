@@ -1,6 +1,5 @@
 import io
 import os
-import cgi
 
 
 from ZODB.FileStorage.FileStorage import FileStorage
@@ -13,6 +12,7 @@ import ZConfig
 from .datatypes import byte_size
 from .datatypes import FALSETYPES
 from .datatypes import TRUETYPES
+from ._compat import parse_qsl
 from ._compat import urlsplit
 
 # Capability test for older Pythons (2.x < 2.7.4, 3.x < 3.2.4)
@@ -79,7 +79,7 @@ class MappingStorageURIResolver(Resolver):
             query = ''
         else:
             name, query = result
-        kw = dict(cgi.parse_qsl(query))
+        kw = dict(parse_qsl(query))
         kw = self.interpret_kwargs(kw)
         dbkw = get_dbkw(kw)
         args = (name,)
@@ -105,7 +105,7 @@ class FileStorageURIResolver(Resolver):
         else:
             path, query = result
         path = os.path.normpath(path)
-        kw = dict(cgi.parse_qsl(query))
+        kw = dict(parse_qsl(query))
         kw = self.interpret_kwargs(kw)
         dbkw = get_dbkw(kw)
         items = sorted(kw.items())
@@ -177,7 +177,7 @@ class ClientStorageURIResolver(Resolver):
             # Unix domain socket URL
             path = os.path.normpath(path)
             args = (path,)
-        kw = dict(cgi.parse_qsl(query))
+        kw = dict(parse_qsl(query))
         kw = self.interpret_kwargs(kw)
         dbkw = get_dbkw(kw)
         items = sorted(kw.items())
