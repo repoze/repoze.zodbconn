@@ -4,3 +4,6 @@
 docs/.build
 env26/
 dist/
+nosetests.xml
+coverage.xml
+.tox
