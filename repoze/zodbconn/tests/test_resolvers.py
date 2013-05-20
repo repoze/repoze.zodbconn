@@ -3,16 +3,6 @@ import unittest
 
 class Base:
 
-    def failIf(self, expr, msg=None):
-        # silence stupid 2.7 stdlib deprecation
-        if expr: #pragma NO COVERAGE
-            raise self.failureException, msg
-
-    def failUnless(self, expr, msg=None):
-        # silence stupid 2.7 stdlib deprecation
-        if not expr: #pragma NO COVERAGE
-            raise self.failureException, msg
-
     def test_interpret_kwargs_noargs(self):
         resolver = self._makeOne()
         kwargs = resolver.interpret_kwargs({})
@@ -118,7 +108,7 @@ class TestFileStorageURIResolver(Base, unittest.TestCase):
 
     def test_invoke_factory_filestorage(self):
         import os
-        self.failIf(os.path.exists(os.path.join(self.tmpdir, 'db.db')))
+        self.assertFalse(os.path.exists(os.path.join(self.tmpdir, 'db.db')))
         resolver = self._makeOne()
         k, args, kw, factory = resolver(
             'file://%s/db.db?quota=200' % self.tmpdir)
@@ -128,7 +118,7 @@ class TestFileStorageURIResolver(Base, unittest.TestCase):
                            ('pool_size', 7)))
                          )
         db = factory()
-        self.failUnless(os.path.exists(os.path.join(self.tmpdir, 'db.db')))
+        self.assertTrue(os.path.exists(os.path.join(self.tmpdir, 'db.db')))
 
     def test_demostorage(self):
         resolver = self._makeOne()
@@ -142,7 +132,7 @@ class TestFileStorageURIResolver(Base, unittest.TestCase):
         from ZODB.DemoStorage import DemoStorage
         from ZODB.FileStorage import FileStorage
         DB_FILE = os.path.join(self.tmpdir, 'db.db')
-        self.failIf(os.path.exists(DB_FILE))
+        self.assertFalse(os.path.exists(DB_FILE))
         resolver = self._makeOne()
         k, args, kw, factory = resolver(
             'file://%s/db.db?quota=200&demostorage=true' % self.tmpdir)
@@ -158,9 +148,9 @@ class TestFileStorageURIResolver(Base, unittest.TestCase):
                          )
                         )
         db = factory()
-        self.failUnless(isinstance(db._storage, DemoStorage))
-        self.failUnless(isinstance(get_base(db._storage), FileStorage))
-        self.failUnless(os.path.exists(DB_FILE))
+        self.assertTrue(isinstance(db._storage, DemoStorage))
+        self.assertTrue(isinstance(get_base(db._storage), FileStorage))
+        self.assertTrue(os.path.exists(DB_FILE))
 
     def test_blobstorage(self):
         resolver = self._makeOne()
@@ -177,7 +167,7 @@ class TestFileStorageURIResolver(Base, unittest.TestCase):
         from ZODB.FileStorage import FileStorage
         DB_FILE = os.path.join(self.tmpdir, 'db.db')
         BLOB_DIR = os.path.join(self.tmpdir, 'blob')
-        self.failIf(os.path.exists(DB_FILE))
+        self.assertFalse(os.path.exists(DB_FILE))
         resolver = self._makeOne()
         k, args, kw, factory = resolver(
             'file://%s/db.db?quota=200'
@@ -196,10 +186,10 @@ class TestFileStorageURIResolver(Base, unittest.TestCase):
                          )
                         )
         db = factory()
-        self.failUnless(isinstance(db._storage, BlobStorage))
-        self.failUnless(isinstance(get_base(db._storage), FileStorage))
-        self.failUnless(os.path.exists(DB_FILE))
-        self.failUnless(os.path.exists(BLOB_DIR))
+        self.assertTrue(isinstance(db._storage, BlobStorage))
+        self.assertTrue(isinstance(get_base(db._storage), FileStorage))
+        self.assertTrue(os.path.exists(DB_FILE))
+        self.assertTrue(os.path.exists(BLOB_DIR))
 
     def test_blobstorage_and_demostorage(self):
         resolver = self._makeOne()
@@ -217,7 +207,7 @@ class TestFileStorageURIResolver(Base, unittest.TestCase):
         from ZODB.FileStorage import FileStorage
         DB_FILE = os.path.join(self.tmpdir, 'db.db')
         BLOB_DIR = os.path.join(self.tmpdir, 'blob')
-        self.failIf(os.path.exists(DB_FILE))
+        self.assertFalse(os.path.exists(DB_FILE))
         resolver = self._makeOne()
         k, args, kw, factory = resolver(
             'file://%s/db.db?quota=200&demostorage=true'
@@ -237,12 +227,12 @@ class TestFileStorageURIResolver(Base, unittest.TestCase):
                          )
                         )
         db = factory()
-        self.failUnless(isinstance(db._storage, DemoStorage))
-        self.failUnless(isinstance(get_base(db._storage), BlobStorage))
-        self.failUnless(isinstance(get_base(get_base(db._storage)),
+        self.assertTrue(isinstance(db._storage, DemoStorage))
+        self.assertTrue(isinstance(get_base(db._storage), BlobStorage))
+        self.assertTrue(isinstance(get_base(get_base(db._storage)),
                                    FileStorage))
-        self.failUnless(os.path.exists(DB_FILE))
-        self.failUnless(os.path.exists(BLOB_DIR))
+        self.assertTrue(os.path.exists(DB_FILE))
+        self.assertTrue(os.path.exists(BLOB_DIR))
 
     def test_dbargs(self):
         resolver = self._makeOne()
@@ -386,7 +376,7 @@ class TestZConfigURIResolver(unittest.TestCase):
         k, args, kw, factory = resolver('zconfig://%s#demodb' % self.tmp.name)
         db = factory()
         from ZODB.MappingStorage import MappingStorage
-        self.failUnless(isinstance(db._storage, MappingStorage))
+        self.assertTrue(isinstance(db._storage, MappingStorage))
 
     def test_anonymous_database(self):
         self.tmp.write("""
@@ -405,7 +395,7 @@ class TestZConfigURIResolver(unittest.TestCase):
         k, args, kw, factory = resolver('zconfig://%s' % self.tmp.name)
         db = factory()
         from ZODB.MappingStorage import MappingStorage
-        self.failUnless(isinstance(db._storage, MappingStorage))
+        self.assertTrue(isinstance(db._storage, MappingStorage))
 
     def test_database_not_found(self):
         self.tmp.write("""
@@ -435,7 +425,7 @@ class TestMappingStorageURIResolver(Base, unittest.TestCase):
         self.assertEqual(kw, {})
         db = factory()
         from ZODB.MappingStorage import MappingStorage
-        self.failUnless(isinstance(db._storage, MappingStorage))
+        self.assertTrue(isinstance(db._storage, MappingStorage))
 
     def test_call_with_qs(self):
         uri='memory://storagename?connection_cache_size=100&database_name=fleeb'
@@ -448,7 +438,7 @@ class TestMappingStorageURIResolver(Base, unittest.TestCase):
                                ('pool_size', 7))))
         db = factory()
         from ZODB.MappingStorage import MappingStorage
-        self.failUnless(isinstance(db._storage, MappingStorage))
+        self.assertTrue(isinstance(db._storage, MappingStorage))
 
 
 def get_base(storage): #pragma NO COVERAGE

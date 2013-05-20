@@ -9,11 +9,6 @@ class TestConnector(unittest.TestCase):
         klass = self._getTargetClass()
         return klass(next_app, db, **kwargs)
 
-    def failIf(self, expr, msg=None):
-        # silence stupid 2.7 stdlib deprecation
-        if expr: #pragma NO COVERAGE
-            raise self.failureException, msg
-
     def test_ctor(self):
         def dummy_app(): pass
         db = DummyDB()
@@ -34,12 +29,12 @@ class TestConnector(unittest.TestCase):
         environ = {}
 
         app_iter = app(environ, None)
-        self.failUnless('testconn' in environ)
-        self.failIf(db.conn.closed)
+        self.assertTrue('testconn' in environ)
+        self.assertFalse(db.conn.closed)
         list(app_iter) # consume the generator
         conn = environ['testconn']
         self.assertEqual(conn.closed, True)
-        self.failIf(CONNECTION_KEY in environ)
+        self.assertFalse(CONNECTION_KEY in environ)
 
     def test_app_deletes_connection(self):
         from repoze.zodbconn.connector import CONNECTION_KEY
@@ -54,7 +49,7 @@ class TestConnector(unittest.TestCase):
         list(app(environ, None)) # consume the generator
         conn = environ['testconn']
         self.assertEqual(conn.closed, True)
-        self.failIf(CONNECTION_KEY in environ)
+        self.assertFalse(CONNECTION_KEY in environ)
 
     def test_close_on_exception(self):
         # close the connection even when an exception occurs
@@ -71,7 +66,7 @@ class TestConnector(unittest.TestCase):
         self.assertRaises(ValueError, _test)
         conn = environ['testconn']
         self.assertEqual(conn.closed, True)
-        self.failIf(CONNECTION_KEY in environ)
+        self.assertFalse(CONNECTION_KEY in environ)
 
 
 class TestMakeApp(unittest.TestCase):

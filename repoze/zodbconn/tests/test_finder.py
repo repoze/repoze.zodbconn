@@ -1,18 +1,7 @@
 import unittest
 
-class _Base(unittest.TestCase):
 
-    def failIf(self, expr, msg=None):
-        # silence stupid 2.7 stdlib deprecation
-        if expr: #pragma NO COVERAGE
-            raise self.failureException, msg
-
-    def failUnless(self, expr, msg=None):
-        # silence stupid 2.7 stdlib deprecation
-        if not expr: #pragma NO COVERAGE
-            raise self.failureException, msg
-
-class TestSimpleCleanup(_Base):
+class TestSimpleCleanup(unittest.TestCase):
 
     def _getTargetClass(self):
         from repoze.zodbconn.finder import SimpleCleanup
@@ -27,9 +16,9 @@ class TestSimpleCleanup(_Base):
         environ = {}
         cleanup = self._makeOne(conn, environ)
         del cleanup
-        self.failUnless(root.closed)
+        self.assertTrue(root.closed)
 
-class TestLoggingCleanup(_Base):
+class TestLoggingCleanup(unittest.TestCase):
 
     def _getTargetClass(self):
         from repoze.zodbconn.finder import LoggingCleanup
@@ -48,7 +37,7 @@ class TestLoggingCleanup(_Base):
         cleanup = self._makeOne(conn, environ)
         cleanup.logger = logger
         del cleanup
-        self.failUnless(root.closed)
+        self.assertTrue(root.closed)
         self.assertEqual(len(logger._wrote), 1)
         self.assertEqual(logger._wrote[0], '"GET","/test",0,0\n')
 
@@ -63,13 +52,13 @@ class TestLoggingCleanup(_Base):
         cleanup = self._makeOne(conn, environ)
         cleanup.logger = logger
         del cleanup
-        self.failUnless(root.closed)
+        self.assertTrue(root.closed)
         self.assertEqual(len(logger._wrote), 1)
         self.assertEqual(logger._wrote[0], '"GET","/test?foo=bar",0,0\n')
 
 _marker = object()
 
-class TestPersistentApplicationFinder(_Base):
+class TestPersistentApplicationFinder(unittest.TestCase):
     def setUp(self):
         from repoze.zodbconn.resolvers import RESOLVERS
         self.root = DummyRoot()
@@ -96,7 +85,7 @@ class TestPersistentApplicationFinder(_Base):
         finder = self._makeOne('foo://bar.baz', makeapp)
         self.assertEqual(finder.uri, 'foo://bar.baz')
         self.assertEqual(finder.appmaker, makeapp)
-        self.failUnless(finder.cleanup is SimpleCleanup)
+        self.assertTrue(finder.cleanup is SimpleCleanup)
 
     def test_call_no_db_no_cleanup(self):
         from repoze.zodbconn.finder import CLOSER_KEY
@@ -107,10 +96,10 @@ class TestPersistentApplicationFinder(_Base):
         environ = {}
         app = finder(environ)
         self.assertEqual(app, 'abc')
-        self.failUnless(self.root.made)
+        self.assertTrue(self.root.made)
         self.failIf(self.root.closed)
         del environ[CLOSER_KEY]
-        self.failUnless(self.root.closed)
+        self.assertTrue(self.root.closed)
         self.assertEqual(finder.db, self.db)
 
     def test_call_no_db_w_cleanup(self):
@@ -122,11 +111,11 @@ class TestPersistentApplicationFinder(_Base):
         environ = {}
         app = finder(environ)
         self.assertEqual(app, 'abc')
-        self.failUnless(self.root.made)
+        self.assertTrue(self.root.made)
         self.failIf(self.root.closed)
         self.assertEqual(environ['XXX'], None)
         del environ[CLOSER_KEY]
-        self.failUnless(self.root.closed)
+        self.assertTrue(self.root.closed)
         self.assertEqual(finder.db, self.db)
 
     def test_call_with_db_no_cleanup(self):
@@ -139,10 +128,10 @@ class TestPersistentApplicationFinder(_Base):
         environ = {}
         app = finder(environ)
         self.assertEqual(app, 'abc')
-        self.failUnless(self.root.made)
+        self.assertTrue(self.root.made)
         self.failIf(self.root.closed)
         del environ[CLOSER_KEY]
-        self.failUnless(self.root.closed)
+        self.assertTrue(self.root.closed)
 
     def test_call_with_db_w_cleanup(self):
         from repoze.zodbconn.finder import CLOSER_KEY
@@ -154,11 +143,11 @@ class TestPersistentApplicationFinder(_Base):
         environ = {}
         app = finder(environ)
         self.assertEqual(app, 'abc')
-        self.failUnless(self.root.made)
+        self.assertTrue(self.root.made)
         self.failIf(self.root.closed)
         self.assertEqual(environ['XXX'], None)
         del environ[CLOSER_KEY]
-        self.failUnless(self.root.closed)
+        self.assertTrue(self.root.closed)
 
     def test_get_connection_from_environ_connector_key(self):
         from repoze.zodbconn.finder import CLOSER_KEY
@@ -172,7 +161,7 @@ class TestPersistentApplicationFinder(_Base):
         environ = {CONNECTION_KEY: conn}
         app = finder(environ)
         self.assertEqual(app, 'abc')
-        self.failUnless(self.root.made)
+        self.assertTrue(self.root.made)
         self.failIf(self.root.closed)
         self.failIf(CLOSER_KEY in environ)
 
@@ -189,10 +178,10 @@ class TestPersistentApplicationFinder(_Base):
         app = finder(environ)
         self.assertEqual(app, 'abc')
         self.failIf('made' in self.root.__dict__)
-        self.failUnless(root.made)
+        self.assertTrue(root.made)
         self.failIf(self.root.closed)
         self.failIf(root.closed)
-        self.failUnless(CLOSER_KEY in environ)
+        self.assertTrue(CLOSER_KEY in environ)
 
     def test_ignore_connection_from_environ(self):
         from repoze.zodbconn.finder import CLOSER_KEY
@@ -206,9 +195,9 @@ class TestPersistentApplicationFinder(_Base):
         environ = {CONNECTION_KEY: conn}
         app = finder(environ)
         self.assertEqual(app, 'abc')
-        self.failUnless(self.root.made)
+        self.assertTrue(self.root.made)
         self.failIf(self.root.closed)
-        self.failUnless(CLOSER_KEY in environ)
+        self.assertTrue(CLOSER_KEY in environ)
 
     def test_call_no_uri(self):
         from repoze.zodbconn.finder import CLOSER_KEY
@@ -222,7 +211,7 @@ class TestPersistentApplicationFinder(_Base):
         environ = {CONNECTION_KEY: conn}
         app = finder(environ)
         self.assertEqual(app, 'abc')
-        self.failUnless(self.root.made)
+        self.assertTrue(self.root.made)
         self.failIf(self.root.closed)
         self.failIf(CLOSER_KEY in environ)
 

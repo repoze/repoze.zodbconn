@@ -22,11 +22,6 @@ class TestDBFromURI(unittest.TestCase):
         from repoze.zodbconn.uri import db_from_uri
         return db_from_uri(uri)
 
-    def failUnless(self, expr, msg=None):
-        # silence stupid 2.7 stdlib deprecation
-        if not expr: #pragma NO COVERAGE
-            raise self.failureException, msg
-
     def test_single_database(self):
         db = self._callFUT('foo://bar.baz')
         self.assertEqual(db.database_name, 'foo')
@@ -34,16 +29,16 @@ class TestDBFromURI(unittest.TestCase):
     def test_multiple_databases_via_whitespace(self):
         db = self._callFUT(' foo://bar.baz  addon:// ')
         self.assertEqual(db.database_name, 'foo')
-        self.failUnless('addon' in db.databases)
-        self.failUnless('foo' in db.databases)
+        self.assertTrue('addon' in db.databases)
+        self.assertTrue('foo' in db.databases)
         self.assertEqual(db.databases,
             db.databases['addon'].databases)
 
     def test_multiple_databases_via_list(self):
         db = self._callFUT(['foo://bar.baz', 'addon://'])
         self.assertEqual(db.database_name, 'foo')
-        self.failUnless('addon' in db.databases)
-        self.failUnless('foo' in db.databases)
+        self.assertTrue('addon' in db.databases)
+        self.assertTrue('foo' in db.databases)
         self.assertEqual(db.databases,
             db.databases['addon'].databases)
 
