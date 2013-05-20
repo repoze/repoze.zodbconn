@@ -7,3 +7,4 @@ dist/
 nosetests.xml
 coverage.xml
 .tox
+*.egg
