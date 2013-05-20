@@ -12,7 +12,7 @@
 #
 ##############################################################################
 
-__version__ = '0.14'
+__version__ = '1.0dev'
 
 import os
 
@@ -36,7 +36,7 @@ setup(name='repoze.zodbconn',
       description=('Opens ZODB by URI and provides ZODB-related WSGI apps'),
       long_description=README + '\n\n' + CHANGES,
       classifiers=[
-        "Development Status :: 3 - Alpha",
+        "Development Status :: 4 - Beta",
         "Intended Audience :: Developers",
         "Programming Language :: Python",
         "Programming Language :: Python :: 2",
