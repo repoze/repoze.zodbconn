@@ -97,7 +97,7 @@ class TestPersistentApplicationFinder(unittest.TestCase):
         app = finder(environ)
         self.assertEqual(app, 'abc')
         self.assertTrue(self.root.made)
-        self.failIf(self.root.closed)
+        self.assertFalse(self.root.closed)
         del environ[CLOSER_KEY]
         self.assertTrue(self.root.closed)
         self.assertEqual(finder.db, self.db)
@@ -112,7 +112,7 @@ class TestPersistentApplicationFinder(unittest.TestCase):
         app = finder(environ)
         self.assertEqual(app, 'abc')
         self.assertTrue(self.root.made)
-        self.failIf(self.root.closed)
+        self.assertFalse(self.root.closed)
         self.assertEqual(environ['XXX'], None)
         del environ[CLOSER_KEY]
         self.assertTrue(self.root.closed)
@@ -129,7 +129,7 @@ class TestPersistentApplicationFinder(unittest.TestCase):
         app = finder(environ)
         self.assertEqual(app, 'abc')
         self.assertTrue(self.root.made)
-        self.failIf(self.root.closed)
+        self.assertFalse(self.root.closed)
         del environ[CLOSER_KEY]
         self.assertTrue(self.root.closed)
 
@@ -144,7 +144,7 @@ class TestPersistentApplicationFinder(unittest.TestCase):
         app = finder(environ)
         self.assertEqual(app, 'abc')
         self.assertTrue(self.root.made)
-        self.failIf(self.root.closed)
+        self.assertFalse(self.root.closed)
         self.assertEqual(environ['XXX'], None)
         del environ[CLOSER_KEY]
         self.assertTrue(self.root.closed)
@@ -162,8 +162,8 @@ class TestPersistentApplicationFinder(unittest.TestCase):
         app = finder(environ)
         self.assertEqual(app, 'abc')
         self.assertTrue(self.root.made)
-        self.failIf(self.root.closed)
-        self.failIf(CLOSER_KEY in environ)
+        self.assertFalse(self.root.closed)
+        self.assertFalse(CLOSER_KEY in environ)
 
     def test_get_connection_from_environ_closer_key(self):
         from repoze.zodbconn.finder import CLOSER_KEY
@@ -177,10 +177,10 @@ class TestPersistentApplicationFinder(unittest.TestCase):
         environ = {CLOSER_KEY: conn.close}
         app = finder(environ)
         self.assertEqual(app, 'abc')
-        self.failIf('made' in self.root.__dict__)
+        self.assertFalse('made' in self.root.__dict__)
         self.assertTrue(root.made)
-        self.failIf(self.root.closed)
-        self.failIf(root.closed)
+        self.assertFalse(self.root.closed)
+        self.assertFalse(root.closed)
         self.assertTrue(CLOSER_KEY in environ)
 
     def test_ignore_connection_from_environ(self):
@@ -196,7 +196,7 @@ class TestPersistentApplicationFinder(unittest.TestCase):
         app = finder(environ)
         self.assertEqual(app, 'abc')
         self.assertTrue(self.root.made)
-        self.failIf(self.root.closed)
+        self.assertFalse(self.root.closed)
         self.assertTrue(CLOSER_KEY in environ)
 
     def test_call_no_uri(self):
@@ -212,8 +212,8 @@ class TestPersistentApplicationFinder(unittest.TestCase):
         app = finder(environ)
         self.assertEqual(app, 'abc')
         self.assertTrue(self.root.made)
-        self.failIf(self.root.closed)
-        self.failIf(CLOSER_KEY in environ)
+        self.assertFalse(self.root.closed)
+        self.assertFalse(CLOSER_KEY in environ)
 
 
 class DummyRoot:

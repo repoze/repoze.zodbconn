@@ -15,21 +15,21 @@ class TestEnvironmentDeleterMiddleware(unittest.TestCase):
         mw = self._makeOne(app)
         environ = {CLOSER_KEY:'123'}
         mw(environ, None)
-        self.failIf(CLOSER_KEY in environ)
+        self.assertFalse(CLOSER_KEY in environ)
         
     def test_nondefault_key(self):
         app = DummyApplication()
         mw = self._makeOne(app, 'abc')
         environ = {'abc':'123'}
         mw(environ, None)
-        self.failIf('abc' in environ)
+        self.assertFalse('abc' in environ)
 
     def test_exception_when_app_called(self):
         app = DummyRaisingApplication()
         mw = self._makeOne(app, 'abc')
         environ = {'abc':'123'}
         self.assertRaises(KeyError, mw, environ, None)
-        self.failIf('abc' in environ)
+        self.assertFalse('abc' in environ)
 
 
 class TestMakeMiddleware(unittest.TestCase):
