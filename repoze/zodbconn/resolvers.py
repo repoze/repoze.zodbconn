@@ -1,11 +1,7 @@
+import io
 import os
 import cgi
-from cStringIO import StringIO
-from urlparse import urlsplit
 
-from repoze.zodbconn.datatypes import byte_size
-from repoze.zodbconn.datatypes import FALSETYPES
-from repoze.zodbconn.datatypes import TRUETYPES
 
 from ZODB.FileStorage.FileStorage import FileStorage
 from ZODB.DemoStorage import DemoStorage
@@ -13,6 +9,11 @@ from ZODB.MappingStorage import MappingStorage
 from ZODB.blob import BlobStorage
 from ZODB.DB import DB
 import ZConfig
+
+from .datatypes import byte_size
+from .datatypes import FALSETYPES
+from .datatypes import TRUETYPES
+from ._compat import urlsplit
 
 # Capability test for older Pythons (2.x < 2.7.4, 3.x < 3.2.4)
 (scheme, netloc, path, query, frag) = urlsplit('scheme:///path/#frag')
@@ -236,7 +237,7 @@ class ZConfigURIResolver(object):
             ) = urlsplit('http:' + path)
         path = os.path.normpath(path)
         schema_xml = self.schema_xml_template
-        schema = ZConfig.loadSchemaFile(StringIO(schema_xml))
+        schema = ZConfig.loadSchemaFile(io.StringIO(schema_xml))
         config, handler = ZConfig.loadConfig(schema, path)
         for database in config.databases:
             if not frag:

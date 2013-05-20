@@ -1,6 +1,7 @@
 
-import urlparse
-from repoze.zodbconn.resolvers import RESOLVERS
+
+from .resolvers import RESOLVERS
+from ._compat import urlsplit
 
 def db_from_uri(uri):
     """Create a database from a list of database URIs and return it.
@@ -30,7 +31,7 @@ def db_from_uri(uri):
     return res
 
 def dbfactory_from_uri(uri):
-    (scheme, netloc, path, query, frag) = urlparse.urlsplit(uri)
+    (scheme, netloc, path, query, frag) = urlsplit(uri)
     resolver =  RESOLVERS.get(scheme)
     if resolver is None:
         raise ValueError('Unresolveable URI %s' % uri)
