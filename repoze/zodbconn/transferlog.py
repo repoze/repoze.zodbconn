@@ -39,6 +39,6 @@ def make_app(next_app, global_conf, **local_conf):
         environment to retrieve the database connection.
     """
     filename = local_conf['filename']
-    logger = open(filename, 'a', False)
+    logger = open(filename, 'ab', False)
     connection_key = local_conf.get('connection_key', CONNECTION_KEY)
     return TransferLog(next_app, logger, connection_key=connection_key)

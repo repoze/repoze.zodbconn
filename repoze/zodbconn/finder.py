@@ -65,7 +65,7 @@ class PersistentApplicationFinder:
         if conn is None:
             closer = environ.get(CLOSER_KEY)
             if closer is not None:
-                conn = closer.im_self
+                conn = closer.__self__
 
         if conn is None:
             conn = self.db.open()
@@ -78,8 +78,7 @@ class PersistentApplicationFinder:
 
         return app
 
-    @property
-    def db(self):
+    def _get_db(self):
         lock = self._db_lock
         lock.acquire()
         try:
@@ -89,4 +88,7 @@ class PersistentApplicationFinder:
             return db
         finally:
             lock.release()
+    def _set_db(self, db=None): #pragma NO COVER Py3k
+        self._db = db
+    db = property(_get_db, _set_db, _set_db)
 

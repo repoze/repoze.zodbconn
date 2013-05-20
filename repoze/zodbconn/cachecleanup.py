@@ -1,7 +1,10 @@
 
 import re
+
 from ZODB.utils import z64
-from repoze.zodbconn.connector import CONNECTION_KEY
+
+from .connector import CONNECTION_KEY
+from ._compat import STRING_TYPES
 
 class CacheCleanup:
     """WGSI framework component that reduces the ZODB cache.
@@ -12,7 +15,7 @@ class CacheCleanup:
     def __init__(self, next_app, class_regexes, connection_key=CONNECTION_KEY):
         self.next_app = next_app
         self.connection_key = connection_key
-        if isinstance(class_regexes, basestring):
+        if isinstance(class_regexes, STRING_TYPES):
             class_regexes = [re.compile(expr) for expr in class_regexes.split()]
         self.class_regexes = class_regexes
         self._class_cache = {}  # {class -> keep (boolean)}

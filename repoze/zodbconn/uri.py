@@ -1,6 +1,7 @@
 
 
 from .resolvers import RESOLVERS
+from ._compat import STRING_TYPES
 from ._compat import urlsplit
 
 def db_from_uri(uri):
@@ -9,7 +10,7 @@ def db_from_uri(uri):
     uri can be either a whitespace-delimited string or a list of URIs
     as strings.
     """
-    if isinstance(uri, basestring):
+    if isinstance(uri, STRING_TYPES):
         uris = uri.strip().split()
     else:
         uris = uri

@@ -83,8 +83,7 @@ class MappingStorageURIResolver(Resolver):
         kw = self.interpret_kwargs(kw)
         dbkw = get_dbkw(kw)
         args = (name,)
-        dbitems = dbkw.items()
-        dbitems.sort()
+        dbitems = sorted(dbkw.items())
         key = (args, tuple(dbitems))
         def factory():
             storage = MappingStorage(*args)
@@ -109,11 +108,9 @@ class FileStorageURIResolver(Resolver):
         kw = dict(cgi.parse_qsl(query))
         kw = self.interpret_kwargs(kw)
         dbkw = get_dbkw(kw)
-        items = kw.items()
-        items.sort()
+        items = sorted(kw.items())
         args = (path,)
-        dbitems = dbkw.items()
-        dbitems.sort()
+        dbitems = sorted(dbkw.items())
         key = (args, tuple(items), tuple(dbitems))
         demostorage = False
 
@@ -183,10 +180,8 @@ class ClientStorageURIResolver(Resolver):
         kw = dict(cgi.parse_qsl(query))
         kw = self.interpret_kwargs(kw)
         dbkw = get_dbkw(kw)
-        items = kw.items()
-        items.sort()
-        dbitems = dbkw.items()
-        dbitems.sort()
+        items = sorted(kw.items())
+        dbitems = sorted(dbkw.items())
         key = (args, tuple(items), tuple(dbitems))
         if 'demostorage' in kw:
             kw.pop('demostorage')
@@ -221,7 +216,7 @@ def get_dbkw(kw):
 
 class ZConfigURIResolver(object):
 
-    schema_xml_template = """
+    schema_xml_template = b"""
     <schema>
         <import package="ZODB"/>
         <multisection type="ZODB.database" attribute="databases" />
@@ -237,7 +232,7 @@ class ZConfigURIResolver(object):
             ) = urlsplit('http:' + path)
         path = os.path.normpath(path)
         schema_xml = self.schema_xml_template
-        schema = ZConfig.loadSchemaFile(io.StringIO(schema_xml))
+        schema = ZConfig.loadSchemaFile(io.BytesIO(schema_xml))
         config, handler = ZConfig.loadConfig(schema, path)
         for database in config.databases:
             if not frag:
