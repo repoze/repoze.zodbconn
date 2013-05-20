@@ -24,7 +24,8 @@ class SuffixMultiplier:
         return int(v) * self._default
 
 byte_size = SuffixMultiplier({'kb': 1024,
-                              'mb': 1024*1024,
-                              'gb': 1024*1024*1024L,})
+                              'mb': 1024 * 1024,
+                              'gb': 1024 * 1024 * 1024,
+                             })
 
 
