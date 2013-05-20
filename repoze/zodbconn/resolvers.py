@@ -1,7 +1,7 @@
 import os
 import cgi
 from cStringIO import StringIO
-import urlparse
+from urlparse import urlsplit
 
 from repoze.zodbconn.datatypes import byte_size
 from repoze.zodbconn.datatypes import FALSETYPES
@@ -13,6 +13,10 @@ from ZODB.MappingStorage import MappingStorage
 from ZODB.blob import BlobStorage
 from ZODB.DB import DB
 import ZConfig
+
+# Capability test for older Pythons (2.x < 2.7.4, 3.x < 3.2.4)
+(scheme, netloc, path, query, frag) = urlsplit('scheme:///path/#frag')
+_BROKEN_URLSPLIT = frag != 'frag'
 
 def interpret_int_args(argnames, kw):
     newkw = {}
@@ -92,7 +96,7 @@ class FileStorageURIResolver(Resolver):
     _string_args = ('blobstorage_dir', 'blobstorage_layout', 'database_name')
     _bytesize_args = ('quota',)
     def __call__(self, uri):
-        # we can't use urlparse.urlsplit here due to Windows filenames
+        # we can't use urlsplit here due to Windows filenames
         prefix, rest = uri.split('file://', 1)
         result = rest.split('?', 1)
         if len(result) == 1:
@@ -161,7 +165,7 @@ class ClientStorageURIResolver(Resolver):
     def __call__(self, uri):
         # urlparse doesnt understand zeo URLs so force to something that doesn't break
         uri = uri.replace('zeo://', 'http://', 1)
-        (scheme, netloc, path, query, frag) = urlparse.urlsplit(uri)
+        (scheme, netloc, path, query, frag) = urlsplit(uri)
         if netloc:
             # TCP URL
             if ':' in netloc:
@@ -224,9 +228,12 @@ class ZConfigURIResolver(object):
     """
 
     def __call__(self, uri):
-        (scheme, netloc, path, query, frag) = urlparse.urlsplit(uri)
-         # urlparse doesnt understand file URLs and stuffs everything into path
-        (scheme, netloc, path, query, frag) = urlparse.urlsplit('http:' + path)
+        (scheme, netloc, path, query, frag) = urlsplit(uri)
+        if _BROKEN_URLSPLIT: #pragma NO COVER
+            # urlsplit used not to allow fragments in non-standard schemes,
+            # stuffed everything into 'path'
+            (scheme, netloc, path, query, frag
+            ) = urlsplit('http:' + path)
         path = os.path.normpath(path)
         schema_xml = self.schema_xml_template
         schema = ZConfig.loadSchemaFile(StringIO(schema_xml))
