@@ -1,8 +1,8 @@
 ``repoze.zodbconn`` Changelog
 =============================
 
-After 0.14
-----------
+0.15 (2013-07-22)
+-----------------
 
 - Worked around broken stdlib ``urlsplit`` implementations  which jam
   the ``fragment`` for non-standard URIs into the path.
