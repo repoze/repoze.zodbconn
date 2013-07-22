@@ -4,6 +4,9 @@
 After 0.14
 ----------
 
+- Worked around broken stdlib ``urlsplit`` implementations  which jam
+  the ``fragment`` for non-standard URIs into the path.
+
 - Add support for Python 3.2 / 3.3.
 
 0.14 (2012-03-16)
